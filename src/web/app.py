@@ -48,16 +48,25 @@ def api_generate() -> tuple:
     top_k: int = int(body.get("top_k", 20))
     top_p: float = float(body.get("top_p", 1.0))
     seed: int = int(body.get("seed", random.randint(0, 2**31)))
+    structure_constraint: bool = bool(body.get("structure_constraint", False))
 
     try:
         validate_prompt(mode, prompt)
     except ValueError as e:
         return jsonify({"ok": False, "error": str(e)}), 400
 
-    rhyme_constraint: bool = body.get("rhyme_constraint", False)
+    rhyme_constraint: bool = bool(body.get("rhyme_constraint", False))
     sampling = SamplingConfig(temperature=temperature, top_k=top_k, top_p=top_p)
     torch.manual_seed(seed)
-    lines = generate_poem(model, vocab, mode, prompt, sampling, rhyme_constraint=rhyme_constraint)
+    lines = generate_poem(
+        model,
+        vocab,
+        mode,
+        prompt,
+        sampling,
+        structure_constraint=structure_constraint,
+        rhyme_constraint=structure_constraint and rhyme_constraint,
+    )
 
     return jsonify({
         "ok": True,
@@ -65,6 +74,8 @@ def api_generate() -> tuple:
         "prompt": prompt,
         "lines": lines,
         "seed": seed,
+        "structure_constraint": structure_constraint,
+        "rhyme_constraint": rhyme_constraint,
     })
 
 
@@ -79,6 +90,8 @@ def api_generate_best() -> tuple:
     top_p: float = float(body.get("top_p", 1.0))
     num_candidates: int = int(body.get("num_candidates", 10))
     base_seed: int = int(body.get("seed", random.randint(0, 2**31)))
+    structure_constraint: bool = bool(body.get("structure_constraint", False))
+    rhyme_constraint: bool = bool(body.get("rhyme_constraint", True))
 
     try:
         validate_prompt(mode, prompt)
@@ -98,7 +111,15 @@ def api_generate_best() -> tuple:
 
     for i in range(num_candidates):
         torch.manual_seed(base_seed + i)
-        lines = generate_poem(model, vocab, mode, prompt, sampling, rhyme_constraint=True)
+        lines = generate_poem(
+            model,
+            vocab,
+            mode,
+            prompt,
+            sampling,
+            structure_constraint=structure_constraint,
+            rhyme_constraint=structure_constraint and rhyme_constraint,
+        )
         score = rhyme_score(lines)
         rhyme_info = rhyme_report(lines)
         candidate = {
@@ -123,6 +144,8 @@ def api_generate_best() -> tuple:
         "rhyme_score": round(best_score, 2),
         "num_candidates": num_candidates,
         "all_candidates": all_candidates[:5],  # top 5 for optional display
+        "structure_constraint": structure_constraint,
+        "rhyme_constraint": rhyme_constraint,
     })
 
 

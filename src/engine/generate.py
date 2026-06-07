@@ -29,6 +29,7 @@ def _rhyme_index(vocab: Vocab) -> dict[str, list[int]]:
     return {f: ids for f, ids in index.items() if len(ids) >= 3}
 
 _rhyme_cache: dict[str, list[int]] | None = None
+LINE_TOKENS = ("<L1>", "<L2>", "<L3>", "<L4>")
 
 def get_rhyme_candidates(vocab: Vocab, char: str) -> list[int]:
     global _rhyme_cache
@@ -97,8 +98,12 @@ class IncrementalDecoder:
 
 
 def sample_char(logits: torch.Tensor, vocab: Vocab, sampling: SamplingConfig) -> int:
+    return sample_token(logits, vocab, sampling, vocab.char_ids)
+
+
+def sample_token(logits: torch.Tensor, vocab: Vocab, sampling: SamplingConfig, allowed_ids: list[int]) -> int:
     allowed = torch.zeros_like(logits, dtype=torch.bool)
-    allowed[vocab.char_ids] = True
+    allowed[allowed_ids] = True
     logits = logits.masked_fill(~allowed, float("-inf"))
     logits = logits / max(sampling.temperature, 1e-5)
     logits = top_k_filter(logits, sampling.top_k)
@@ -119,9 +124,13 @@ def generate_poem(
     mode: str,
     prompt: str,
     sampling: SamplingConfig,
+    structure_constraint: bool = True,
     rhyme_constraint: bool = False,
 ) -> list[str]:
     validate_prompt(mode, prompt)
+    if not structure_constraint:
+        return generate_poem_raw(model, vocab, mode, prompt, sampling)
+
     if mode == "continue":
         lines = [prompt]
         prefix = ["<BOS>", "<TASK_CONT>", "<SEP>", *prompt, "<SEP>", "<L2>"]
@@ -162,6 +171,61 @@ def generate_poem(
         if line_idx < 3:
             decoder.push(vocab.id(f"<L{line_idx + 2}>"))
     return lines
+
+
+def decode_lines(tokens: list[str]) -> list[str]:
+    lines: list[str] = []
+    current: list[str] = []
+    for token in tokens:
+        if token == "<EOS>":
+            break
+        if token in LINE_TOKENS:
+            if current:
+                lines.append("".join(current))
+                current = []
+            continue
+        if len(token) == 1:
+            current.append(token)
+    if current:
+        lines.append("".join(current))
+    return lines
+
+
+@torch.no_grad()
+def generate_poem_raw(
+    model: CharPoemLM,
+    vocab: Vocab,
+    mode: str,
+    prompt: str,
+    sampling: SamplingConfig,
+) -> list[str]:
+    validate_prompt(mode, prompt)
+    if mode == "continue":
+        prefix = ["<BOS>", "<TASK_CONT>", "<SEP>", *prompt, "<SEP>", "<L2>"]
+    elif mode == "acrostic":
+        prefix = ["<BOS>", "<TASK_ACRO>", "<SEP>", *prompt, "<SEP>", "<L1>"]
+    else:
+        raise ValueError("mode must be 'continue' or 'acrostic'")
+
+    decoder = IncrementalDecoder(model, vocab.encode(prefix))
+    generated_tokens: list[str] = []
+    extra_ids = [vocab.id(tok) for tok in ("<EOS>", *LINE_TOKENS)]
+    allowed_ids = sorted(set(vocab.char_ids + extra_ids))
+    max_steps = 40
+
+    for _ in range(max_steps):
+        assert decoder.logits is not None
+        token_id = sample_token(decoder.logits, vocab, sampling, allowed_ids)
+        token = vocab.tokens[token_id]
+        decoder.push(token_id)
+        generated_tokens.append(token)
+        if token == "<EOS>":
+            break
+
+    lines = decode_lines(generated_tokens)
+    if mode == "continue":
+        return [prompt, *lines][:4]
+    return lines[:4]
 
 
 def sample_char_rhyme(logits, vocab, sampling, rhyme_candidates):

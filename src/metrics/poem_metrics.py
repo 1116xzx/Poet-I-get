@@ -121,11 +121,12 @@ def rhyme_score(lines: list[str]) -> float:
 
 def rhyme_report(lines: list[str]) -> dict:
     """Return a human-readable rhyme diagnosis for the UI."""
-    finals = [final_rhyme(line[-1]) for line in lines]
-    tones = [rhyme_tone(line[-1]) for line in lines]
+    safe_lines = [line for line in lines if line]
+    finals = [final_rhyme(line[-1]) for line in safe_lines]
+    tones = [rhyme_tone(line[-1]) for line in safe_lines]
     endings = []
-    for i in range(4):
-        label = f"{lines[i][-1]}({finals[i]})"
+    for i, line in enumerate(safe_lines):
+        label = f"{line[-1]}({finals[i]})"
         if tones[i] > 0:
             label += str(tones[i])
         endings.append(label)

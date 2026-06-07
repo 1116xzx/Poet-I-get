@@ -47,22 +47,28 @@ def evaluate_strategy(model, vocab, prompts: list[dict], train_index: CopyRiskIn
     for i, poem in enumerate(prompts):
         for mode, prompt in (("continue", poem["lines"][0]), ("acrostic", "".join(line[0] for line in poem["lines"]))):
             seed_everything(seed + i)
-            lines = generate_poem(model, vocab, mode, prompt, strategy)
-            text = "".join(lines)
+            raw_lines = generate_poem(model, vocab, mode, prompt, strategy, structure_constraint=False)
+            constrained_lines = generate_poem(model, vocab, mode, prompt, strategy, structure_constraint=True)
+            text = "".join(raw_lines)
             rows.append(
                 {
                     "mode": mode,
-                    "format_ok": float(strict_format_ok(lines)),
-                    "acrostic_ok": float(acrostic_ok(lines, prompt)) if mode == "acrostic" else None,
+                    "raw_format_ok": float(strict_format_ok(raw_lines)),
+                    "constrained_format_ok": float(strict_format_ok(constrained_lines)),
+                    "raw_acrostic_ok": float(acrostic_ok(raw_lines, prompt)) if mode == "acrostic" else None,
+                    "constrained_acrostic_ok": float(acrostic_ok(constrained_lines, prompt)) if mode == "acrostic" else None,
                     "distinct_2": distinct_n(text, 2),
                     "repeat_rate": repeat_rate(text, 2),
                     "nearest_4gram_jaccard": train_index.max_jaccard(text),
                 }
             )
-    acro = [row["acrostic_ok"] for row in rows if row["acrostic_ok"] is not None]
+    raw_acro = [row["raw_acrostic_ok"] for row in rows if row["raw_acrostic_ok"] is not None]
+    constrained_acro = [row["constrained_acrostic_ok"] for row in rows if row["constrained_acrostic_ok"] is not None]
     return {
-        "format_rate": mean([row["format_ok"] for row in rows]),
-        "acrostic_rate": mean(acro),
+        "raw_format_rate": mean([row["raw_format_ok"] for row in rows]),
+        "constrained_format_rate": mean([row["constrained_format_ok"] for row in rows]),
+        "raw_acrostic_rate": mean(raw_acro),
+        "constrained_acrostic_rate": mean(constrained_acro),
         "distinct_2": mean([row["distinct_2"] for row in rows]),
         "repeat_rate": mean([row["repeat_rate"] for row in rows]),
         "nearest_4gram_jaccard": mean([row["nearest_4gram_jaccard"] for row in rows]),

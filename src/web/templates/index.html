@@ -5,21 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>七言绝句 · 诗人我持</title>
 <style>
-  /* ── Reset & Foundation ── */
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg:        #f5f5f7;
-    --card-bg:   #ffffff;
-    --text:      #1d1d1f;
+    --bg: #f5f5f7;
+    --card-bg: #ffffff;
+    --text: #1d1d1f;
     --text-soft: #86868b;
-    --accent:    #0071e3;
+    --accent: #0071e3;
     --accent-hover: #0077ed;
-    --green:     #34c759;
-    --orange:    #ff9500;
-    --border:    #d2d2d7;
-    --shadow:    0 4px 24px rgba(0,0,0,.06);
-    --radius:    20px;
+    --green: #34c759;
+    --orange: #ff9500;
+    --border: #d2d2d7;
+    --shadow: 0 4px 24px rgba(0,0,0,.06);
+    --radius: 20px;
     --radius-sm: 12px;
   }
 
@@ -34,17 +33,11 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  /* ── Layout ── */
   .container { width: 100%; max-width: 620px; display: flex; flex-direction: column; gap: 24px; }
-
-  /* ── Card ── */
   .card { background: var(--card-bg); border-radius: var(--radius); padding: 32px; box-shadow: var(--shadow); }
-
-  /* ── Title ── */
-  .title { font-size: 28px; font-weight: 600; letter-spacing: 0.5px; text-align: center; color: var(--text); }
+  .title { font-size: 28px; font-weight: 600; letter-spacing: .5px; text-align: center; color: var(--text); }
   .subtitle { font-size: 15px; color: var(--text-soft); text-align: center; margin-top: 6px; font-weight: 400; }
 
-  /* ── Mode Toggle ── */
   .toggle-group { display: flex; gap: 0; background: #f0f0f3; border-radius: var(--radius-sm); padding: 3px; }
   .toggle-btn {
     flex: 1; padding: 12px 0; border: none; background: transparent; font-size: 15px;
@@ -53,85 +46,26 @@
   }
   .toggle-btn.active { background: #fff; color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 
-  /* ── Input ── */
   .prompt-wrap {
-    display: flex; align-items: center; gap: 0; background: #f6f6f9; border-radius: var(--radius-sm);
+    display: flex; flex-direction: column; gap: 8px; background: #f6f6f9; border-radius: var(--radius-sm);
     border: 1.5px solid transparent; transition: border-color .2s, box-shadow .2s;
-    overflow: hidden; position: relative;
+    overflow: hidden; position: relative; padding: 14px 16px 12px;
   }
   .prompt-wrap:focus-within { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
   .prompt-wrap input {
-    flex: 1; border: none; background: transparent; padding: 16px 16px; font-size: 20px;
+    width: 100%; border: none; background: transparent; font-size: 24px;
     outline: none; color: var(--text); font-family: "PingFang SC", "Microsoft YaHei", serif;
     letter-spacing: 4px; min-width: 0;
   }
   .prompt-wrap input::placeholder { color: #c7c7cc; letter-spacing: 2px; font-size: 16px; }
-  .char-hint { font-size: 13px; color: var(--text-soft); padding-right: 16px; white-space: nowrap; user-select: none; }
-
-  /* ── Rhyme toggle button ── */
-  .rhyme-row { display: flex; align-items: center; justify-content: space-between; }
-  .rhyme-label { font-size: 14px; font-weight: 500; }
-  .rhyme-desc  { font-size: 12px; color: var(--text-soft); margin-top: 3px; }
-  .rhyme-btn {
-    padding: 10px 24px; border-radius: var(--radius-sm);
-    font-size: 14px; font-weight: 600; font-family: inherit; cursor: pointer;
-    transition: all .25s; letter-spacing: 0.5px;
-    background: #fff; color: var(--text); border: 1.5px solid var(--border);
-    box-shadow: 0 1px 3px rgba(0,0,0,.04); flex-shrink: 0;
+  .prompt-meta {
+    display: flex; justify-content: space-between; gap: 12px;
+    font-size: 13px; color: var(--text-soft);
   }
-  .rhyme-btn:hover { border-color: #c7c7cc; }
-  .rhyme-btn.active { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
-  .rhyme-btn.disabled { opacity: .4; pointer-events: none; }
 
-  /* ── Candidate count stepper ── */
-  .rhyme-options { display: none; margin-top: 14px; padding: 14px; background: #f9f9fb; border-radius: var(--radius-sm); }
-  .rhyme-options.show { display: block; }
-  .stepper-row { display: flex; align-items: center; gap: 12px; }
-  .stepper-label { font-size: 13px; color: var(--text-soft); }
-  .stepper-btn {
-    width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border);
-    background: #fff; font-size: 18px; cursor: pointer; color: var(--text);
-    display: flex; align-items: center; justify-content: center; transition: all .15s;
-  }
-  .stepper-btn:hover { border-color: var(--accent); color: var(--accent); }
-  .stepper-val { font-size: 16px; font-weight: 600; min-width: 24px; text-align: center; }
-  .stepper-input {
-    width: 52px; height: 32px; border: 1.5px solid var(--border); border-radius: 8px;
-    text-align: center; font-size: 16px; font-weight: 600; font-family: inherit;
-    color: var(--text); background: #fff; outline: none; transition: border-color .2s;
-    -moz-appearance: textfield;
-  }
-  .stepper-input::-webkit-inner-spin-button,
-  .stepper-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
-  .stepper-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
-
-  /* ── Lock controls during generation ── */
-  #controlsCard.generating input,
-  #controlsCard.generating button:not(#btnGenerate):not(.kid-btn),
-  #controlsCard.generating .toggle-btn { pointer-events: none; opacity: .5; }
-
-  /* ── Children's mode ── */
-  .kid-btn {
-    position: fixed; top: 14px; right: 14px; z-index: 100;
-    padding: 4px 14px; border-radius: 20px;
-    font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer;
-    transition: all .25s;
-    background: rgba(255,255,255,.85); color: var(--text);
-    border: 1px solid var(--border); backdrop-filter: blur(4px);
-    box-shadow: 0 1px 3px rgba(0,0,0,.06);
-  }
-  .kid-btn:hover { border-color: #c7c7cc; background: #fff; }
-  .kid-btn.active { color: #e85d3a; border-color: #e85d3a; background: rgba(255,255,255,.95); box-shadow: 0 0 0 3px rgba(232,93,58,.12); }
-
-  /* ── Pinyin ruby annotations ── */
-  .poem-ruby { font-size: 24px; line-height: 2.8; letter-spacing: 3px; text-align: center; color: var(--text); font-family: "PingFang SC", "Songti SC", "STSong", "Noto Serif CJK SC", serif; }
-  .poem-ruby ruby { ruby-align: center; }
-  .poem-ruby rt { font-size: 11px; color: var(--accent); letter-spacing: 1px; font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; font-weight: 500; }
-
-  /* ── Sampling sliders ── */
   .slider-group { display: flex; flex-direction: column; gap: 14px; }
   .slider-row { display: flex; align-items: center; gap: 12px; }
-  .slider-label { width: 80px; font-size: 13px; color: var(--text-soft); text-align: right; flex-shrink: 0; }
+  .slider-label { width: 86px; font-size: 13px; color: var(--text-soft); text-align: right; flex-shrink: 0; }
   .slider-row input[type=range] {
     flex: 1; -webkit-appearance: none; height: 6px; background: #e5e5ea; border-radius: 3px; outline: none;
   }
@@ -139,42 +73,78 @@
     -webkit-appearance: none; width: 22px; height: 22px; border-radius: 50%;
     background: #fff; border: 1.5px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.1); cursor: pointer;
   }
-  .slider-val { width: 38px; font-size: 14px; font-weight: 500; text-align: center; color: var(--text); }
+  .slider-val { width: 42px; font-size: 14px; font-weight: 500; text-align: center; color: var(--text); }
 
-  /* ── Button ── */
-  .btn-generate {
-    width: 100%; padding: 16px 0; border: none; background: var(--accent); color: #fff;
-    font-size: 17px; font-weight: 600; font-family: inherit; border-radius: var(--radius-sm);
-    cursor: pointer; transition: background .2s, transform .1s, box-shadow .2s; letter-spacing: 1px;
+  .switch-list {
+    display: flex; flex-direction: column; gap: 14px; margin-top: 20px;
+    padding-top: 20px; border-top: 1px solid #f0f0f3;
   }
-  .btn-generate:hover  { background: var(--accent-hover); }
+  .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+  .switch-copy strong { display: block; font-size: 14px; font-weight: 600; }
+  .switch-copy span { display: block; font-size: 12px; color: var(--text-soft); margin-top: 3px; line-height: 1.45; }
+  .switch-btn {
+    padding: 10px 24px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; font-family: inherit;
+    cursor: pointer; transition: all .25s; letter-spacing: .5px; background: #fff; color: var(--text);
+    border: 1.5px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.04); flex-shrink: 0;
+  }
+  .switch-btn:hover { border-color: #c7c7cc; }
+  .switch-btn.active { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
+  .switch-btn.disabled { opacity: .4; pointer-events: none; }
+
+  .rhyme-options { display: none; margin-top: 12px; padding: 14px; background: #f9f9fb; border-radius: var(--radius-sm); }
+  .rhyme-options.show { display: block; }
+  .stepper-row { display: flex; align-items: center; gap: 12px; }
+  .stepper-label { font-size: 13px; color: var(--text-soft); }
+  .stepper-btn {
+    width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--border); background: #fff;
+    font-size: 18px; cursor: pointer; color: var(--text); display: flex; align-items: center; justify-content: center; transition: all .15s;
+  }
+  .stepper-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .stepper-input {
+    width: 52px; height: 32px; border: 1.5px solid var(--border); border-radius: 8px; text-align: center;
+    font-size: 16px; font-weight: 600; font-family: inherit; color: var(--text); background: #fff; outline: none;
+    transition: border-color .2s; -moz-appearance: textfield;
+  }
+  .stepper-input::-webkit-inner-spin-button, .stepper-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+  .stepper-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
+
+  .btn-generate {
+    width: 100%; padding: 16px 0; border: none; background: var(--accent); color: #fff; font-size: 17px;
+    font-weight: 600; font-family: inherit; border-radius: var(--radius-sm); cursor: pointer;
+    transition: background .2s, transform .1s, box-shadow .2s; letter-spacing: 1px; margin-top: 22px;
+  }
+  .btn-generate:hover { background: var(--accent-hover); }
   .btn-generate:active { transform: scale(.98); }
 
-  /* ── Poem output ── */
   .poem-card {
     background: var(--card-bg); border-radius: var(--radius); padding: 40px 32px;
-    box-shadow: var(--shadow); min-height: 180px; display: flex; align-items: center;
+    box-shadow: var(--shadow); min-height: 220px; display: flex; align-items: center;
     justify-content: center; transition: opacity .3s; flex-direction: column;
   }
   .poem-empty { text-align: center; color: #c7c7cc; font-size: 15px; line-height: 2; }
-  .poem-lines {
-    font-size: 24px; line-height: 2.2; letter-spacing: 3px; text-align: center;
+  .poem-lines, .poem-ruby {
+    width: 100%; font-size: 26px; line-height: 2.2; letter-spacing: 3px; text-align: center;
     color: var(--text); font-family: "PingFang SC", "Songti SC", "STSong", "Noto Serif CJK SC", serif;
   }
-  .poem-meta { margin-top: 20px; font-size: 12px; color: var(--text-soft); text-align: center; }
-
-  /* ── Rhyme badge ── */
-  .rhyme-badge {
-    display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600;
-    margin-top: 8px; letter-spacing: 0.5px;
+  .poem-lines span, .poem-ruby span { display: block; margin-bottom: 6px; }
+  .poem-ruby rt {
+    font-size: 11px; color: var(--accent); letter-spacing: 1px;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif; font-weight: 500;
   }
-  .rhyme-badge.good { background: #e8f8ed; color: #1a7d3b; }
-  .rhyme-badge.ok   { background: #fff3e0; color: #b8600a; }
-  .rhyme-badge.poor { background: #fce8e6; color: #b3261e; }
+  .poem-meta {
+    margin-top: 20px; font-size: 12px; color: var(--text-soft); text-align: center;
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+  }
+  .meta-chip, .rhyme-badge {
+    display: inline-flex; align-items: center; justify-content: center; min-height: 28px;
+    padding: 0 10px; border-radius: 999px; border: 1px solid #ececf1; background: #fafafc;
+  }
+  .rhyme-badge.good { color: #1a7d3b; background: #e8f8ed; border-color: #d5f0dd; }
+  .rhyme-badge.ok { color: #b8600a; background: #fff3e0; border-color: #ffe2ba; }
+  .rhyme-badge.poor { color: #b3261e; background: #fce8e6; border-color: #f5cfc9; }
 
-  /* ── Candidates list ── */
   .candidates-section { margin-top: 24px; width: 100%; border-top: 1px solid #f0f0f3; padding-top: 20px; }
-  .candidates-title { font-size: 12px; color: var(--text-soft); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }
+  .candidates-title { font-size: 12px; color: var(--text-soft); letter-spacing: 1px; margin-bottom: 12px; }
   .candidate-row {
     display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px;
     font-size: 14px; cursor: pointer; transition: background .15s; position: relative;
@@ -182,373 +152,374 @@
   .candidate-row:hover { background: #f0f4ff; }
   .candidate-row.best { background: #e8f0fe; }
   .candidate-rank { font-size: 11px; color: var(--text-soft); width: 20px; flex-shrink: 0; }
-  .candidate-text { flex: 1; letter-spacing: 1px; font-family: "PingFang SC", "Songti SC", serif; }
+  .candidate-text { flex: 1; letter-spacing: 1px; font-family: "PingFang SC", "Songti SC", serif; word-break: break-all; }
   .candidate-score { font-size: 11px; font-weight: 600; flex-shrink: 0; }
   .candidate-best-tag { font-size: 10px; color: var(--accent); font-weight: 600; flex-shrink: 0; }
 
-  /* ── Spinner ── */
   .spinner { display: inline-block; width: 28px; height: 28px; border: 3px solid #e5e5ea; border-top-color: var(--accent); border-radius: 50%; animation: spin .7s linear infinite; }
   @keyframes spin { to { transform: rotate(360deg); } }
-
-  /* ── Error ── */
   .error-msg { text-align: center; color: #ff3b30; font-size: 14px; padding: 8px 0; }
+
+  #controlsCard.generating input,
+  #controlsCard.generating button:not(#btnGenerate):not(.kid-btn),
+  #controlsCard.generating .toggle-btn { pointer-events: none; opacity: .5; }
+
+  .kid-btn {
+    position: fixed; top: 14px; right: 14px; z-index: 100; padding: 4px 14px; border-radius: 20px;
+    font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; transition: all .25s;
+    background: rgba(255,255,255,.85); color: var(--text); border: 1px solid var(--border); backdrop-filter: blur(4px);
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .kid-btn:hover { border-color: #c7c7cc; background: #fff; }
+  .kid-btn.active { color: #e85d3a; border-color: #e85d3a; background: rgba(255,255,255,.95); box-shadow: 0 0 0 3px rgba(232,93,58,.12); }
 
   @media (max-width: 480px) {
     .card, .poem-card { padding: 24px 18px; }
-    .poem-lines { font-size: 20px; line-height: 2; }
-    .prompt-wrap input { font-size: 18px; letter-spacing: 2px; }
+    .poem-lines, .poem-ruby { font-size: 20px; line-height: 2; }
+    .prompt-wrap input { font-size: 20px; letter-spacing: 2px; }
+    .prompt-meta { flex-direction: column; align-items: flex-start; gap: 4px; }
+    .switch-row { align-items: flex-start; }
   }
 </style>
 </head>
 <body>
 
-<div class="container">
+<button class="kid-btn" id="kidBtn">幼儿模式</button>
 
-  <!-- Header -->
-  <!-- Header -->
+<div class="container">
   <div>
     <h1 class="title">诗人我持</h1>
     <p class="subtitle">GRU 七言绝句生成</p>
   </div>
 
-  <!-- Kid mode corner button -->
-  <button class="kid-btn" id="kidBtn">🐔 幼儿模式</button>
-
-  <!-- Mode + Input -->
   <div class="card" id="controlsCard">
     <div class="toggle-group" id="toggleGroup">
       <button class="toggle-btn active" data-mode="continue">首句续写</button>
       <button class="toggle-btn" data-mode="acrostic">藏头诗</button>
     </div>
 
-    <!-- Prompt input -->
     <div style="margin-top:20px;">
-      <div class="prompt-wrap" id="promptWrap">
+      <div class="prompt-wrap">
         <input type="text" id="promptInput" placeholder="输入首句七言" maxlength="7" autocomplete="off">
-        <span class="char-hint" id="charHint">0 / 7</span>
+        <div class="prompt-meta">
+          <span id="promptDesc">输入七字诗句，生成后三句</span>
+          <span id="charHint">0 / 7</span>
+        </div>
       </div>
-      <p style="font-size:13px;color:var(--text-soft);margin-top:6px;text-align:center" id="promptDesc">
-        输入七字诗首句，诗人我持后三句
-      </p>
     </div>
 
-    <!-- Sampling controls -->
     <div class="slider-group" style="margin-top:20px;">
       <div class="slider-row">
-        <span class="slider-label">温度</span>
+        <span class="slider-label">Temperature</span>
         <input type="range" id="temperature" min="0.3" max="1.5" step="0.05" value="0.9">
         <span class="slider-val" id="tempVal">0.9</span>
       </div>
       <div class="slider-row">
-        <span class="slider-label">Top‑K</span>
+        <span class="slider-label">Top-k</span>
         <input type="range" id="topK" min="0" max="100" step="5" value="20">
         <span class="slider-val" id="topKVal">20</span>
       </div>
       <div class="slider-row">
-        <span class="slider-label">Top‑P</span>
+        <span class="slider-label">Top-p</span>
         <input type="range" id="topP" min="0.5" max="1.0" step="0.05" value="1.0">
         <span class="slider-val" id="topPVal">1.0</span>
       </div>
     </div>
 
-    <!-- Rhyme optimisation switch -->
-    <div style="margin-top:20px; padding-top:20px; border-top:1px solid #f0f0f3;">
-      <div class="rhyme-row">
-        <div>
-          <div class="rhyme-label">押韵优化</div>
-          <div class="rhyme-desc">一次生成多韵脚，自动对比选最好</div>
+    <div class="switch-list">
+      <div class="switch-row">
+        <div class="switch-copy">
+          <strong>结构增强</strong>
+          <span>关闭时按模型原始生成，打开后再施加句长和位置约束。</span>
         </div>
-        <button class="rhyme-btn" id="rhymeBtn">关</button>
+        <button class="switch-btn" id="structureBtn">关</button>
       </div>
 
-      <div class="rhyme-options" id="rhymeOptions">
-        <div class="stepper-row">
-          <span class="stepper-label">候选数量</span>
-          <button class="stepper-btn" id="candMinus">−</button>
-          <input type="number" class="stepper-input" id="candCount" value="10" min="3" max="50">
-          <button class="stepper-btn" id="candPlus">+</button>
+      <div>
+        <div class="switch-row">
+          <div class="switch-copy">
+            <strong>押韵优化</strong>
+            <span>一次生成多首候选，再自动选出韵脚更好的结果。</span>
+          </div>
+          <button class="switch-btn" id="rhymeBtn">关</button>
         </div>
-        <p style="font-size:11px;color:var(--text-soft);margin-top:8px">
-          生成越多候选越可能找到好韵脚，但生成时间也会变长
-        </p>
+
+        <div class="rhyme-options" id="rhymeOptions">
+          <div class="stepper-row">
+            <span class="stepper-label">候选数量</span>
+            <button class="stepper-btn" id="candMinus">−</button>
+            <input type="number" class="stepper-input" id="candCount" value="10" min="3" max="50">
+            <button class="stepper-btn" id="candPlus">+</button>
+          </div>
+          <p style="font-size:11px;color:var(--text-soft);margin-top:8px;line-height:1.5;">
+            候选越多越容易挑到更顺的韵脚，但生成时间也会变长。
+          </p>
+        </div>
       </div>
     </div>
 
-    <button class="btn-generate" id="btnGenerate" style="margin-top:22px;">生成</button>
+    <button class="btn-generate" id="btnGenerate">生成</button>
   </div>
 
-  <!-- Output -->
-  <div class="poem-card" id="poemCard">
-    <div class="poem-empty" id="poemEmpty">点击「生成」<br>诗人我持为你写诗</div>
+  <div class="poem-card">
+    <div class="poem-empty" id="poemEmpty">点击“生成”<br>诗人我持为你写诗</div>
     <div id="poemContent" style="display:none;width:100%"></div>
   </div>
-
 </div>
 
 <script>
-/* ── State ── */
-const state = { mode: 'continue', rhymeOn: false, kidMode: false, candCount: 10, generating: false, abortController: null };
+const state = { mode: "continue", structureOn: false, rhymeOn: false, kidMode: false, candCount: 10, generating: false, abortController: null };
 
-/* ── DOM refs ── */
-const $ = id => document.getElementById(id);
-const toggleGroup  = $('toggleGroup');
-const promptInput  = $('promptInput');
-const charHint     = $('charHint');
-const promptDesc   = $('promptDesc');
-const tempSlider   = $('temperature');
-const kSlider      = $('topK');
-const pSlider      = $('topP');
-const btnGen       = $('btnGenerate');
-const poemEmpty    = $('poemEmpty');
-const poemContent  = $('poemContent');
-const rhymeBtn      = $('rhymeBtn');
-const rhymeOptions = $('rhymeOptions');
-const candCountEl  = $('candCount');
-const candMinus    = $('candMinus');
-const candPlus     = $('candPlus');
-const kidBtn       = $('kidBtn');
+const $ = (id) => document.getElementById(id);
+const toggleGroup = $("toggleGroup");
+const promptInput = $("promptInput");
+const charHint = $("charHint");
+const promptDesc = $("promptDesc");
+const tempSlider = $("temperature");
+const kSlider = $("topK");
+const pSlider = $("topP");
+const btnGen = $("btnGenerate");
+const poemEmpty = $("poemEmpty");
+const poemContent = $("poemContent");
+const structureBtn = $("structureBtn");
+const rhymeBtn = $("rhymeBtn");
+const rhymeOptions = $("rhymeOptions");
+const candCountEl = $("candCount");
+const candMinus = $("candMinus");
+const candPlus = $("candPlus");
+const kidBtn = $("kidBtn");
 
-/* ── Mode toggle ── */
-toggleGroup.addEventListener('click', e => {
-  const btn = e.target.closest('.toggle-btn');
+toggleGroup.addEventListener("click", (e) => {
+  const btn = e.target.closest(".toggle-btn");
   if (!btn) return;
   state.mode = btn.dataset.mode;
-  toggleGroup.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
+  toggleGroup.querySelectorAll(".toggle-btn").forEach((b) => b.classList.remove("active"));
+  btn.classList.add("active");
 
-  const limit = state.mode === 'continue' ? 7 : 4;
+  const limit = state.mode === "continue" ? 7 : 4;
   promptInput.maxLength = limit;
-  promptInput.value = '';
+  promptInput.value = "";
   updateCharHint();
 
-  if (state.mode === 'continue') {
-    promptInput.placeholder = '输入首句七言';
-    promptDesc.textContent = '输入七字诗首句，诗人我持后三句';
+  if (state.mode === "continue") {
+    promptInput.placeholder = "输入首句七言";
+    promptDesc.textContent = "输入七字诗句，生成后三句";
   } else {
-    promptInput.placeholder = '输入四个藏头字';
-    promptDesc.textContent = '输入四字作藏头，诗人我持补全诗';
+    promptInput.placeholder = "输入四个藏头字";
+    promptDesc.textContent = "输入四字藏头，生成完整四句";
   }
 });
 
-/* ── Char counter ── */
-const updateCharHint = () => {
-  const max = state.mode === 'continue' ? 7 : 4;
-  const len = promptInput.value.length;
-  charHint.textContent = `${len} / ${max}`;
-};
-promptInput.addEventListener('input', updateCharHint);
+function updateCharHint() {
+  const max = state.mode === "continue" ? 7 : 4;
+  charHint.textContent = `${promptInput.value.length} / ${max}`;
+}
+promptInput.addEventListener("input", updateCharHint);
 
-/* ── Slider value syncing ── */
-const syncSlider = (slider, display) => {
+function syncSlider(slider, display) {
   display.textContent = slider.value;
-  slider.addEventListener('input', () => { display.textContent = slider.value; });
-};
-syncSlider(tempSlider, $('tempVal'));
-syncSlider(kSlider,    $('topKVal'));
-syncSlider(pSlider,    $('topPVal'));
+  slider.addEventListener("input", () => { display.textContent = slider.value; });
+}
+syncSlider(tempSlider, $("tempVal"));
+syncSlider(kSlider, $("topKVal"));
+syncSlider(pSlider, $("topPVal"));
 
-/* ── Rhyme toggle (disabled during generation) ── */
-rhymeBtn.addEventListener('click', () => {
+structureBtn.addEventListener("click", () => {
+  if (state.generating) return;
+  state.structureOn = !state.structureOn;
+  structureBtn.classList.toggle("active", state.structureOn);
+  structureBtn.textContent = state.structureOn ? "开" : "关";
+});
+
+rhymeBtn.addEventListener("click", () => {
   if (state.generating) return;
   state.rhymeOn = !state.rhymeOn;
-  rhymeBtn.classList.toggle('active', state.rhymeOn);
-  rhymeBtn.textContent = state.rhymeOn ? '开' : '关';
-  rhymeOptions.classList.toggle('show', state.rhymeOn);
+  rhymeBtn.classList.toggle("active", state.rhymeOn);
+  rhymeBtn.textContent = state.rhymeOn ? "开" : "关";
+  rhymeOptions.classList.toggle("show", state.rhymeOn);
 });
 
-/* ── Children's mode ── */
-kidBtn.addEventListener('click', () => {
+kidBtn.addEventListener("click", () => {
   state.kidMode = !state.kidMode;
-  kidBtn.classList.toggle('active', state.kidMode);
-  kidBtn.textContent = '🐔 幼儿模式';
-  // re-render existing poem with/without pinyin
-  const pc = document.getElementById('poemContent');
-  if (pc.style.display !== 'none' && pc.dataset.lines) {
-    const lines = JSON.parse(pc.dataset.lines);
-    const allCandidates = pc.dataset.candidates ? JSON.parse(pc.dataset.candidates) : null;
-    const numCandidates = parseInt(pc.dataset.numCandidates) || 0;
-    renderDisplay(lines, pc.dataset.mode, pc.dataset.seed, pc.dataset.rhymeScore, allCandidates, numCandidates, state.kidMode, !!allCandidates);
+  kidBtn.classList.toggle("active", state.kidMode);
+  kidBtn.textContent = state.kidMode ? "退出幼儿模式" : "幼儿模式";
+  const pc = $("poemContent");
+  if (pc.style.display !== "none" && pc.dataset.lines) {
+    renderDisplay(
+      JSON.parse(pc.dataset.lines),
+      pc.dataset.mode,
+      pc.dataset.seed,
+      pc.dataset.rhymeScore,
+      pc.dataset.candidates ? JSON.parse(pc.dataset.candidates) : null,
+      parseInt(pc.dataset.numCandidates || "0", 10),
+      state.kidMode,
+      !!pc.dataset.candidates,
+      pc.dataset.structureConstraint === "1",
+    );
   }
 });
 
-/* ── Stepper (manual input + buttons) ── */
-const clamp = (val) => Math.max(3, Math.min(50, val));
+function clamp(val) {
+  return Math.max(3, Math.min(50, val));
+}
 
-candCountEl.addEventListener('input', () => {
-  const n = parseInt(candCountEl.value);
-  if (!isNaN(n) && n >= 3 && n <= 50) state.candCount = n;
-  // otherwise do nothing — user is still typing
+candCountEl.addEventListener("input", () => {
+  const n = parseInt(candCountEl.value, 10);
+  if (!Number.isNaN(n) && n >= 3 && n <= 50) state.candCount = n;
 });
 
-candCountEl.addEventListener('blur', () => {
-  const n = parseInt(candCountEl.value);
-  if (isNaN(n)) {
-    candCountEl.value = state.candCount;          // revert to last valid
+candCountEl.addEventListener("blur", () => {
+  const n = parseInt(candCountEl.value, 10);
+  if (Number.isNaN(n)) {
+    candCountEl.value = state.candCount;
   } else {
     state.candCount = clamp(n);
-    candCountEl.value = state.candCount;           // clamp & display
+    candCountEl.value = state.candCount;
   }
 });
 
-candMinus.addEventListener('click', () => {
+candMinus.addEventListener("click", () => {
   state.candCount = clamp(state.candCount - 1);
   candCountEl.value = state.candCount;
 });
-candPlus.addEventListener('click', () => {
+candPlus.addEventListener("click", () => {
   state.candCount = clamp(state.candCount + 1);
   candCountEl.value = state.candCount;
 });
 
-/* ── Score → badge ── */
-const rhymeBadge = (score) => {
-  if (score >= 50) return `<span class="rhyme-badge good">韵脚优秀 (${Math.round(score)}分)</span>`;
-  if (score >= 25) return `<span class="rhyme-badge ok">韵脚一般 (${Math.round(score)}分)</span>`;
-  return `<span class="rhyme-badge poor">韵脚较弱 (${Math.round(score)}分)</span>`;
-};
+function rhymeBadge(score) {
+  if (score >= 50) return `<span class="rhyme-badge good">押韵优秀 ${Math.round(score)}分</span>`;
+  if (score >= 25) return `<span class="rhyme-badge ok">押韵一般 ${Math.round(score)}分</span>`;
+  return `<span class="rhyme-badge poor">押韵较弱 ${Math.round(score)}分</span>`;
+}
 
-/* ── Fetch pinyin from API and render with ruby tags ── */
-const renderWithPinyin = async (lines) => {
-  const punct = ['，', '，', '，', '。'];
-  const text = lines.join('');
+async function renderWithPinyin(lines) {
+  const text = lines.join("");
   try {
-    const res = await fetch('/api/pinyin', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+    const res = await fetch("/api/pinyin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ text }),
     });
     const data = await res.json();
     if (!data.ok) return null;
     const annotations = data.annotations;
     let idx = 0;
-    return lines.map((line, li) => {
+    return lines.map((line) => {
       const chars = [];
-      for (let ci = 0; ci < line.length; ci++) {
+      for (let ci = 0; ci < line.length; ci += 1) {
         const ann = annotations[idx];
         chars.push(`<ruby>${ann.char}<rt>${ann.pinyin}</rt></ruby>`);
-        idx++;
+        idx += 1;
       }
-      return `<span style="display:block;margin-bottom:6px">${chars.join('')}${punct[li]}</span>`;
+      return `<span>${chars.join("")}</span>`;
     });
   } catch {
     return null;
   }
-};
+}
 
-/* ── Render poem display (normal or kid mode) ── */
-const renderDisplay = async (lines, mode, seed, rhymeScore, allCandidates, numCandidates, kidMode, showCandidates) => {
-  poemEmpty.style.display = 'none';
-  poemContent.style.display = 'block';
+async function renderDisplay(lines, mode, seed, rhymeScore, allCandidates, numCandidates, kidMode, showCandidates, structureConstraint) {
+  poemEmpty.style.display = "none";
+  poemContent.style.display = "block";
   poemContent.dataset.lines = JSON.stringify(lines);
   poemContent.dataset.mode = mode;
   poemContent.dataset.seed = seed;
-  poemContent.dataset.rhymeScore = rhymeScore !== undefined ? String(rhymeScore) : '';
-  poemContent.dataset.candidates = showCandidates && allCandidates ? JSON.stringify(allCandidates) : '';
-  poemContent.dataset.numCandidates = showCandidates ? String(numCandidates) : '0';
+  poemContent.dataset.rhymeScore = rhymeScore !== undefined && rhymeScore !== null ? String(rhymeScore) : "";
+  poemContent.dataset.candidates = showCandidates && allCandidates ? JSON.stringify(allCandidates) : "";
+  poemContent.dataset.numCandidates = showCandidates ? String(numCandidates) : "0";
+  poemContent.dataset.structureConstraint = structureConstraint ? "1" : "0";
 
-  const punct = ['，', '，', '，', '。'];
   let poemHtml;
-
   if (kidMode) {
     const rubyLines = await renderWithPinyin(lines);
-    if (rubyLines) {
-      poemHtml = `<div class="poem-ruby">${rubyLines.join('')}</div>`;
-    } else {
-      poemHtml = `<div class="poem-lines">${lines.map((l, i) =>
-        `<span style="display:block;margin-bottom:4px">${l}${punct[i]}</span>`
-      ).join('')}</div>`;
-    }
+    poemHtml = rubyLines
+      ? `<div class="poem-ruby">${rubyLines.join("")}</div>`
+      : `<div class="poem-lines">${lines.map((l) => `<span>${l}</span>`).join("")}</div>`;
   } else {
-    poemHtml = `<div class="poem-lines">${lines.map((l, i) =>
-      `<span style="display:block;margin-bottom:4px">${l}${punct[i]}</span>`
-    ).join('')}</div>`;
+    poemHtml = `<div class="poem-lines">${lines.map((l) => `<span>${l}</span>`).join("")}</div>`;
   }
 
-  let meta = `<div class="poem-meta">mode=${mode} &nbsp;·&nbsp; seed=${seed}`;
-  if (rhymeScore !== undefined) {
-    meta += ` &nbsp;·&nbsp; ${rhymeBadge(Number(rhymeScore))}`;
+  const meta = [
+    `<span class="meta-chip">${mode === "continue" ? "首句续写" : "藏头诗"}</span>`,
+  ];
+  if (rhymeScore !== undefined && rhymeScore !== null) {
+    meta.push(rhymeBadge(Number(rhymeScore)));
   }
-  meta += `</div>`;
 
-  let candidatesHtml = '';
-  let selectedIdx = 0;
+  let candidatesHtml = "";
   if (showCandidates && allCandidates && allCandidates.length > 1) {
-    const currentText = lines.join('');
-    selectedIdx = allCandidates.findIndex(c => c.lines.join('') === currentText);
+    const currentText = lines.join("");
+    let selectedIdx = allCandidates.findIndex((c) => c.lines.join("") === currentText);
     if (selectedIdx < 0) selectedIdx = 0;
 
-    candidatesHtml = `<div class="candidates-section" id="candidatesList">
-      <div class="candidates-title">候选排行（共 ${numCandidates} 首，点击切换）</div>`;
+    candidatesHtml = `<div class="candidates-section"><div class="candidates-title">候选排行（共 ${numCandidates} 首，点击切换）</div>`;
     allCandidates.forEach((c, i) => {
-      const s = c.rhyme_score;
-      const isSel = i === selectedIdx;
-      const scoreColor = s >= 50 ? 'var(--green)' : s >= 25 ? 'var(--orange)' : '#b3261e';
-      candidatesHtml += `<div class="candidate-row ${isSel ? 'best' : ''}" data-cand-idx="${i}" style="cursor:pointer">
+      const scoreColor = c.rhyme_score >= 50 ? "var(--green)" : c.rhyme_score >= 25 ? "var(--orange)" : "#b3261e";
+      candidatesHtml += `<div class="candidate-row ${i === selectedIdx ? "best" : ""}" data-cand-idx="${i}">
         <span class="candidate-rank">#${i + 1}</span>
-        <span class="candidate-text">${c.lines.join('，')}。</span>
-        <span class="candidate-score" style="color:${scoreColor}">${s}</span>
-        ${isSel ? '<span class="candidate-best-tag">当前</span>' : ''}
+        <span class="candidate-text">${c.lines.join(" / ")}</span>
+        <span class="candidate-score" style="color:${scoreColor}">${c.rhyme_score}</span>
+        ${i === selectedIdx ? '<span class="candidate-best-tag">当前</span>' : ""}
       </div>`;
     });
     candidatesHtml += `</div>`;
   }
 
-  poemContent.innerHTML = poemHtml + meta + candidatesHtml;
+  poemContent.innerHTML = `${poemHtml}<div class="poem-meta">${meta.join("")}</div>${candidatesHtml}`;
 
-  // ── Click candidate to switch ──
-  const list = document.getElementById('candidatesList');
-  if (list) {
-    list.addEventListener('click', (e) => {
-      const row = e.target.closest('.candidate-row');
-      if (!row) return;
-      const idx = parseInt(row.dataset.candIdx);
-      if (isNaN(idx) || !allCandidates[idx]) return;
+  poemContent.querySelectorAll(".candidate-row").forEach((row) => {
+    row.addEventListener("click", () => {
+      const idx = parseInt(row.dataset.candIdx, 10);
+      if (Number.isNaN(idx) || !allCandidates[idx]) return;
       const cand = allCandidates[idx];
-      renderDisplay(cand.lines, mode, seed, cand.rhyme_score, allCandidates, numCandidates, kidMode, showCandidates);
+      renderDisplay(cand.lines, mode, seed, cand.rhyme_score, allCandidates, numCandidates, kidMode, showCandidates, structureConstraint);
     });
-  }
-};
+  });
+}
 
-/* ── Generate / Cancel ── */
-btnGen.addEventListener('click', async () => {
+btnGen.addEventListener("click", async () => {
   if (state.generating) {
     if (state.abortController) state.abortController.abort();
     return;
   }
 
   const prompt = promptInput.value.trim();
-  const max = state.mode === 'continue' ? 7 : 4;
+  const max = state.mode === "continue" ? 7 : 4;
   if (prompt.length !== max) {
     promptInput.focus();
-    promptInput.style.boxShadow = '0 0 0 3px rgba(255,59,48,.2)';
-    setTimeout(() => { promptInput.style.boxShadow = ''; }, 800);
+    promptInput.style.boxShadow = "0 0 0 3px rgba(255,59,48,.2)";
+    setTimeout(() => { promptInput.style.boxShadow = ""; }, 800);
     return;
   }
 
   state.generating = true;
   state.abortController = new AbortController();
-  rhymeBtn.classList.add('disabled');
-  $('controlsCard').classList.add('generating');
-  btnGen.textContent = '✕ 取消';
-  btnGen.style.background = '#ff3b30';
-  poemContent.style.display = 'none';
-  poemEmpty.style.display = 'block';
+  rhymeBtn.classList.add("disabled");
+  structureBtn.classList.add("disabled");
+  $("controlsCard").classList.add("generating");
+  btnGen.textContent = "取消";
+  btnGen.style.background = "#ff3b30";
+  poemContent.style.display = "none";
+  poemEmpty.style.display = "block";
   poemEmpty.innerHTML = '<div class="spinner"></div>';
 
   try {
-    const endpoint = state.rhymeOn ? '/api/generate_best' : '/api/generate';
+    const endpoint = state.rhymeOn ? "/api/generate_best" : "/api/generate";
     const body = {
-      mode:        state.mode,
+      mode: state.mode,
       prompt,
       temperature: parseFloat(tempSlider.value),
-      top_k:       parseInt(kSlider.value),
-      top_p:       parseFloat(pSlider.value),
+      top_k: parseInt(kSlider.value, 10),
+      top_p: parseFloat(pSlider.value),
+      structure_constraint: state.structureOn,
       rhyme_constraint: state.rhymeOn,
     };
     if (state.rhymeOn) body.num_candidates = state.candCount;
 
     const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(body),
       signal: state.abortController.signal,
     });
@@ -557,10 +528,20 @@ btnGen.addEventListener('click', async () => {
     if (!data.ok) {
       poemEmpty.innerHTML = `<span class="error-msg">${data.error}</span>`;
     } else {
-      renderDisplay(data.lines, data.mode, data.seed, data.rhyme_score, data.all_candidates, data.num_candidates, state.kidMode, state.rhymeOn);
+      renderDisplay(
+        data.lines,
+        data.mode,
+        data.seed,
+        data.rhyme_score,
+        data.all_candidates,
+        data.num_candidates,
+        state.kidMode,
+        state.rhymeOn,
+        !!data.structure_constraint,
+      );
     }
   } catch (err) {
-    if (err.name === 'AbortError') {
+    if (err.name === "AbortError") {
       poemEmpty.innerHTML = '<span style="color:var(--text-soft)">已取消生成</span>';
     } else {
       poemEmpty.innerHTML = `<span class="error-msg">网络请求失败: ${err.message}</span>`;
@@ -568,17 +549,15 @@ btnGen.addEventListener('click', async () => {
   } finally {
     state.generating = false;
     state.abortController = null;
-    rhymeBtn.classList.remove('disabled');
-    $('controlsCard').classList.remove('generating');
-    btnGen.textContent = '生成';
-    btnGen.style.background = '';
+    rhymeBtn.classList.remove("disabled");
+    structureBtn.classList.remove("disabled");
+    $("controlsCard").classList.remove("generating");
+    btnGen.textContent = "生成";
+    btnGen.style.background = "";
   }
 });
 
-/* ── Keyboard shortcut ── */
-promptInput.addEventListener('keydown', e => { if (e.key === 'Enter') btnGen.click(); });
-
-/* ── Init ── */
+promptInput.addEventListener("keydown", (e) => { if (e.key === "Enter") btnGen.click(); });
 updateCharHint();
 </script>
 </body>
