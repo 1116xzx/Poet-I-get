@@ -1,0 +1,13 @@
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+server.log
+server.err.log
+*.log
+
+data/raw/
+data/processed/
+runs/
+
+*.tmp

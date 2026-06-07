@@ -1,0 +1,29 @@
+[
+  {
+    "strategy": "stable_t07",
+    "test_ppl": 83.77433168756477,
+    "format_rate": 1.0,
+    "acrostic_rate": 1.0,
+    "distinct_2": 0.9962962962962963,
+    "repeat_rate": 0.003703703703703707,
+    "nearest_4gram_jaccard": 0.01656684412895593
+  },
+  {
+    "strategy": "balanced_t09_k20",
+    "test_ppl": 83.77433168756477,
+    "format_rate": 1.0,
+    "acrostic_rate": 1.0,
+    "distinct_2": 0.9968518518518519,
+    "repeat_rate": 0.0031481481481481525,
+    "nearest_4gram_jaccard": 0.020886461892805228
+  },
+  {
+    "strategy": "creative_t11_p095",
+    "test_ppl": 83.77433168756477,
+    "format_rate": 1.0,
+    "acrostic_rate": 1.0,
+    "distinct_2": 1.0,
+    "repeat_rate": 0.0,
+    "nearest_4gram_jaccard": 0.007527728482697426
+  }
+]

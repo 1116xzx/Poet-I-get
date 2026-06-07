@@ -1,0 +1,9 @@
+[project]
+name = "qijue-poem-generator"
+version = "0.1.0"
+description = "Unified multi-task character-level GRU/LSTM for seven-character Chinese quatrains"
+requires-python = ">=3.10"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
