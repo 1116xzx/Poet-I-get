@@ -5,6 +5,7 @@ data:
   data_dir: data/processed/qijue
   vocab_path: data/processed/qijue/vocab.json
   tasks: [free, continue, acrostic]
+  use_line_markers: true
 
 model:
   rnn_type: gru
@@ -17,10 +18,10 @@ model:
 
 train:
   batch_size: 256
-  epochs: 20
+  epochs: 30
   learning_rate: 0.0003
   weight_decay: 0.01
   grad_clip: 1.0
   num_workers: 0
-  run_dir: runs/gru_base
+  run_dir: runs/moxing/jiegou
   checkpoint_path: checkpoints/gru_best.pt

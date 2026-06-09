@@ -39,18 +39,18 @@ python -m src.engine.train --config configs/gru_base.yaml
 
 # 4. 画训练曲线
 python -m src.utils.plotting \
-  --metrics runs/gru_base/metrics.csv \
-  --out_dir runs/gru_base
+  --metrics runs/moxing/jiegou/metrics.csv \
+  --out_dir runs/moxing/jiegou
 
 # 5. 自动评测三组采样参数
 python -m src.engine.evaluate \
   --checkpoint checkpoints/gru_best.pt \
-  --out runs/gru_base/evaluation.csv
+  --out runs/moxing/jiegou/evaluation.csv
 
 # 6. 导出报告所需的 5 组首句续写 + 5 组藏头诗样例
 python -m src.engine.demo \
   --checkpoint checkpoints/gru_best.pt \
-  --out_dir runs/gru_base/demo
+  --out_dir runs/moxing/jiegou/demo
 ```
 
 单条生成：

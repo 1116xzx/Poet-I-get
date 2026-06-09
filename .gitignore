@@ -8,6 +8,12 @@ server.err.log
 
 data/raw/
 data/processed/
-runs/
+runs/*
+!runs/.gitkeep
+!runs/mulu_shuoming.md
+!runs/moxing/
+!runs/moxing/**
+!runs/duibi/
+!runs/duibi/**
 
 *.tmp

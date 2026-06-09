@@ -3,19 +3,15 @@ from __future__ import annotations
 import argparse
 import json
 import random
-import re
-import unicodedata
 from collections import Counter
 from pathlib import Path
 from typing import Iterable
 
 FILE_ID = "1YcP6B28KsOwacr7C_j1tcstkA-QtPd61"
-SENTENCE_SPLIT_RE = re.compile(r"[，。！？；：、,.!?;:|/／\\]+")
-BLANK_BLOCK_RE = re.compile(r"\n\s*\n")
+PUNCT_CHARS = set("，。！？；：、,.!?;:")
 
 
 def download_raw(out_path: str | Path) -> None:
-    """Download chinese_poem.txt from the officiahl Google Drive link."""
     try:
         import gdown
     except ImportError as exc:
@@ -28,70 +24,71 @@ def download_raw(out_path: str | Path) -> None:
 
 
 def normalize_text(text: str) -> str:
-    return unicodedata.normalize("NFKC", text).replace("\u3000", " ").replace("\xa0", " ")
+    return text.replace("\u3000", " ").replace("\xa0", " ").replace("\r\n", "\n").replace("\r", "\n")
 
 
 def is_han(ch: str) -> bool:
-    return ("\u4e00" <= ch <= "\u9fff") or ch == "〇"
+    return "\u4e00" <= ch <= "\u9fff" or ch == "〇"
 
 
 def only_han(text: str) -> str:
     return "".join(ch for ch in normalize_text(text) if is_han(ch))
 
 
-def split_if_quatrain(record: str) -> list[str] | None:
-    """Try common layouts: four lines, punctuation-separated text, or flat 20/28 chars."""
+def parse_record(record: str) -> tuple[list[str], list[str]] | None:
     record = normalize_text(record).strip()
     if not record:
         return None
 
-    line_parts = [only_han(x) for x in record.splitlines()]
-    line_parts = [x for x in line_parts if x]
-    if len(line_parts) == 4:
-        return line_parts
+    lines: list[str] = []
+    puncts: list[str] = []
+    current: list[str] = []
+    for ch in record:
+        if is_han(ch):
+            current.append(ch)
+        elif ch in PUNCT_CHARS:
+            if current:
+                lines.append("".join(current))
+                puncts.append(ch)
+                current = []
+        elif ch == "\n" and current:
+            lines.append("".join(current))
+            puncts.append("")
+            current = []
 
-    punct_parts = [only_han(x) for x in SENTENCE_SPLIT_RE.split(record)]
-    punct_parts = [x for x in punct_parts if x]
-    if len(punct_parts) == 4:
-        return punct_parts
+    if current:
+        lines.append("".join(current))
+        puncts.append("")
+
+    if len(lines) == 4:
+        return lines, puncts[:4]
 
     flat = only_han(record)
     if len(flat) in (20, 28):
         width = len(flat) // 4
-        return [flat[i : i + width] for i in range(0, len(flat), width)]
+        return [flat[i : i + width] for i in range(0, len(flat), width)], ["", "", "", ""]
     return None
 
 
-def iter_candidate_quatrains(raw_text: str) -> Iterable[list[str]]:
-    """Yield quatrain candidates without assuming a single raw-file layout."""
-    raw_text = normalize_text(raw_text).replace("\r\n", "\n").replace("\r", "\n")
+def iter_candidate_quatrains(raw_text: str) -> Iterable[tuple[list[str], list[str]]]:
+    raw_text = normalize_text(raw_text)
+    raw_lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
 
-    for block in BLANK_BLOCK_RE.split(raw_text):
-        parsed = split_if_quatrain(block)
-        if parsed:
-            yield parsed
-
-    lines = [line.strip() for line in raw_text.splitlines() if line.strip()]
-    for line in lines:
-        parsed = split_if_quatrain(line)
+    for line in raw_lines:
+        parsed = parse_record(line)
         if parsed:
             yield parsed
 
     buffer: list[str] = []
-    width: int | None = None
-    for line in lines:
+    for line in raw_lines:
         cleaned = only_han(line)
         if len(cleaned) not in (5, 7):
-            buffer, width = [], None
+            buffer = []
             continue
-        if width is None or len(cleaned) == width:
-            buffer.append(cleaned)
-            width = len(cleaned)
-        else:
-            buffer, width = [cleaned], len(cleaned)
+        buffer.append(cleaned)
         if len(buffer) == 4:
-            yield buffer
-            buffer, width = [], None
+            yield buffer, ["", "", "", ""]
+            buffer = []
 
 
 def poem_kind(lines: list[str]) -> str:
@@ -123,13 +120,18 @@ def save_jsonl(items: list[dict], path: Path) -> None:
             f.write(json.dumps(item, ensure_ascii=False) + "\n")
 
 
+def punctuated_text(lines: list[str], puncts: list[str]) -> str:
+    return "".join(f"{line}{puncts[i] if i < len(puncts) else ''}" for i, line in enumerate(lines))
+
+
 def preprocess(raw_path: str | Path, out_dir: str | Path, seed: int = 42) -> dict:
     raw = Path(raw_path).read_text(encoding="utf-8", errors="ignore")
     form_counter: Counter[str] = Counter()
+    punct_counter: Counter[str] = Counter()
     seen: set[str] = set()
     qijue: list[dict] = []
 
-    for lines in iter_candidate_quatrains(raw):
+    for lines, puncts in iter_candidate_quatrains(raw):
         kind = poem_kind(lines)
         form_counter[kind] += 1
         if kind != "qijue":
@@ -138,7 +140,10 @@ def preprocess(raw_path: str | Path, out_dir: str | Path, seed: int = 42) -> dic
         if flat in seen:
             continue
         seen.add(flat)
-        qijue.append({"text": flat, "lines": lines})
+        for punct in puncts:
+            if punct:
+                punct_counter[punct] += 1
+        qijue.append({"text": flat, "lines": lines, "puncts": puncts, "text_with_punct": punctuated_text(lines, puncts)})
 
     splits = split_dataset(qijue, seed)
     out = Path(out_dir)
@@ -156,11 +161,10 @@ def preprocess(raw_path: str | Path, out_dir: str | Path, seed: int = 42) -> dic
         "parsed_form_distribution": dict(form_counter),
         "split_sizes": {name: len(items) for name, items in splits.items()},
         "unique_chars": len(char_counter),
+        "punct_distribution": dict(punct_counter),
         "top_50_chars": char_counter.most_common(50),
     }
-    (out / "stats.json").write_text(
-        json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8"
-    )
+    (out / "stats.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
     (out / "top_chars.csv").write_text(
         "char,freq\n" + "\n".join(f"{ch},{freq}" for ch, freq in char_counter.most_common()),
         encoding="utf-8-sig",

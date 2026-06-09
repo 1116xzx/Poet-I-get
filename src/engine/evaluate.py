@@ -12,7 +12,8 @@ from torch import nn
 from torch.utils.data import DataLoader
 
 from src.data.dataset import PoemDataset, collate_examples
-from src.engine.generate import SamplingConfig, generate_poem, load_checkpoint
+from src.data.tokenizer import PUNCT_TOKENS
+from src.engine.generate import SamplingConfig, generate_poem, generate_poem_trace, load_checkpoint
 from src.metrics.poem_metrics import CopyRiskIndex, acrostic_ok, distinct_n, repeat_rate, strict_format_ok
 from src.utils.common import choose_device, read_jsonl, save_json, seed_everything
 
@@ -23,8 +24,12 @@ STRATEGIES = {
 }
 
 
+def has_line_markers(vocab) -> bool:
+    return all(token in vocab.stoi for token in ("<L1>", "<L2>", "<L3>", "<L4>"))
+
+
 def test_ppl(model, vocab, poems, device) -> float:
-    dataset = PoemDataset(poems, vocab, tasks=["free"])
+    dataset = PoemDataset(poems, vocab, tasks=["free"], use_line_markers=has_line_markers(vocab))
     loader = DataLoader(dataset, batch_size=256, shuffle=False, collate_fn=partial(collate_examples, pad_id=vocab.pad_id))
     criterion = nn.CrossEntropyLoss(ignore_index=-100, reduction="sum")
     total_nll, total_tokens = 0.0, 0
@@ -42,18 +47,37 @@ def mean(values: list[float]) -> float:
     return sum(values) / max(len(values), 1)
 
 
+def expected_puncts_for_mode(poem: dict, mode: str) -> list[str]:
+    puncts = list(poem.get("puncts", ["", "", "", ""]))
+    puncts = (puncts + ["", "", "", ""])[:4]
+    return puncts[1:] if mode == "continue" else puncts
+
+
+def strict_raw_text_format_ok(mode: str, prompt: str, trace, expected_puncts: list[str]) -> bool:
+    if trace.invalid_token:
+        return False
+    puncts = [token for token in trace.tokens if token in PUNCT_TOKENS]
+    if mode == "continue":
+        lines = [prompt, *trace.lines]
+    else:
+        lines = trace.lines
+    return puncts == expected_puncts and strict_format_ok(lines)
+
+
 def evaluate_strategy(model, vocab, prompts: list[dict], train_index: CopyRiskIndex, strategy: SamplingConfig, seed: int) -> dict:
     rows = []
     for i, poem in enumerate(prompts):
         for mode, prompt in (("continue", poem["lines"][0]), ("acrostic", "".join(line[0] for line in poem["lines"]))):
             seed_everything(seed + i)
-            raw_lines = generate_poem(model, vocab, mode, prompt, strategy, structure_constraint=False)
+            raw_trace = generate_poem_trace(model, vocab, mode, prompt, strategy)
+            raw_lines = [prompt, *raw_trace.lines] if mode == "continue" else raw_trace.lines
             constrained_lines = generate_poem(model, vocab, mode, prompt, strategy, structure_constraint=True)
             text = "".join(raw_lines)
             rows.append(
                 {
                     "mode": mode,
-                    "raw_format_ok": float(strict_format_ok(raw_lines)),
+                    "raw_text_format_ok": float(strict_raw_text_format_ok(mode, prompt, raw_trace, expected_puncts_for_mode(poem, mode))),
+                    "raw_control_leak": float(raw_trace.leaked_control_token),
                     "constrained_format_ok": float(strict_format_ok(constrained_lines)),
                     "raw_acrostic_ok": float(acrostic_ok(raw_lines, prompt)) if mode == "acrostic" else None,
                     "constrained_acrostic_ok": float(acrostic_ok(constrained_lines, prompt)) if mode == "acrostic" else None,
@@ -65,7 +89,8 @@ def evaluate_strategy(model, vocab, prompts: list[dict], train_index: CopyRiskIn
     raw_acro = [row["raw_acrostic_ok"] for row in rows if row["raw_acrostic_ok"] is not None]
     constrained_acro = [row["constrained_acrostic_ok"] for row in rows if row["constrained_acrostic_ok"] is not None]
     return {
-        "raw_format_rate": mean([row["raw_format_ok"] for row in rows]),
+        "raw_text_format_rate": mean([row["raw_text_format_ok"] for row in rows]),
+        "raw_control_leak_rate": mean([row["raw_control_leak"] for row in rows]),
         "constrained_format_rate": mean([row["constrained_format_ok"] for row in rows]),
         "raw_acrostic_rate": mean(raw_acro),
         "constrained_acrostic_rate": mean(constrained_acro),

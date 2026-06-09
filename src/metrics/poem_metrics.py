@@ -4,8 +4,12 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 
+def is_chinese_char(ch: str) -> bool:
+    return "\u4e00" <= ch <= "\u9fff" or ch == "〇"
+
+
 def strict_format_ok(lines: list[str]) -> bool:
-    return len(lines) == 4 and all(len(line) == 7 and all("\u4e00" <= ch <= "\u9fff" or ch == "〇" for ch in line) for line in lines)
+    return len(lines) == 4 and all(len(line) == 7 and all(is_chinese_char(ch) for ch in line) for line in lines)
 
 
 def ngrams(text: str, n: int) -> set[str]:
@@ -26,7 +30,6 @@ def acrostic_ok(lines: list[str], heads: str) -> bool:
 
 
 def final_rhyme(ch: str) -> str:
-    """Return the final (韵母) of a Chinese character.  E.g. 桥->iao, 潮->ao."""
     try:
         from pypinyin import Style, lazy_pinyin
 
@@ -37,7 +40,6 @@ def final_rhyme(ch: str) -> str:
 
 
 def rhyme_tone(ch: str) -> int:
-    """Return the tone (1-5, 5=轻声) of a Chinese character."""
     try:
         from pypinyin import Style, lazy_pinyin
 
@@ -52,15 +54,7 @@ def rhyme_tone(ch: str) -> int:
 
 
 def rhyme_score(lines: list[str]) -> float:
-    """Rate how well a 4-line quatrain rhymes. 0–100 scale.
-
-    绝句 rules:
-      - lines 2 & 4 MUST share the same final (最高权重)
-      - line 1 may also rhyme with 2/4 (bonus)
-      - matching tone (同平仄) on rhyming lines adds precision
-      - line 3 should NOT rhyme with 2/4 (绝句第三句不押韵)
-    """
-    if len(lines) != 4:
+    if len(lines) != 4 or any(not line for line in lines):
         return 0.0
 
     finals = [final_rhyme(line[-1]) for line in lines]
@@ -71,56 +65,39 @@ def rhyme_score(lines: list[str]) -> float:
             return False
         if a == b:
             return True
-        if len(a) >= 2 and len(b) >= 2 and (a.endswith(b) or b.endswith(a)):
-            return True
-        return False
+        return len(a) >= 2 and len(b) >= 2 and (a.endswith(b) or b.endswith(a))
 
     score = 0.0
-
-    # ── Core: line 2 & 4 (权重 50 分) ──
     if _rhymes(finals[1], finals[3]):
         score += 40.0
-        # tone match bonus (同声调更佳)
         if tones[1] == tones[3] and tones[1] > 0:
             score += 10.0
-    elif finals[1] and finals[3]:
-        # at least share last vowel
-        if finals[1][-1] == finals[3][-1]:
-            score += 12.0
-            # tone match bonus
-            if tones[1] == tones[3] and tones[1] > 0:
-                score += 3.0
+    elif finals[1] and finals[3] and finals[1][-1] == finals[3][-1]:
+        score += 12.0
+        if tones[1] == tones[3] and tones[1] > 0:
+            score += 3.0
 
-    # ── Bonus: line 1 also rhyming (20 分) ──
-    if _rhymes(finals[0], finals[1]):
-        score += 15.0
-        if tones[0] == tones[1] and tones[0] > 0:
-            score += 5.0
-    if _rhymes(finals[0], finals[3]):
-        score += 15.0
-        if tones[0] == tones[3] and tones[0] > 0:
-            score += 5.0
+    for i, j in [(0, 1), (0, 3)]:
+        if _rhymes(finals[i], finals[j]):
+            score += 15.0
+            if tones[i] == tones[j] and tones[i] > 0:
+                score += 5.0
 
-    # ── Bonus: line 3 should NOT rhyme (绝句第三句不押韵, 20 分) ──
     if not _rhymes(finals[2], finals[1]) and not _rhymes(finals[2], finals[3]):
         score += 20.0
-
-    # ── Penalty: line 3 wrongly rhymes with 2 or 4 ──
-    if _rhymes(finals[2], finals[1]) or _rhymes(finals[2], finals[3]):
+    else:
         score -= 15.0
 
-    # ── Small bonus: each rhyming pair shares same tone ──
-    pair_count = 0
-    for i, j in [(1, 3), (0, 1), (0, 3)]:
-        if _rhymes(finals[i], finals[j]) and tones[i] == tones[j] and tones[i] > 0:
-            pair_count += 1
+    pair_count = sum(
+        1
+        for i, j in [(1, 3), (0, 1), (0, 3)]
+        if _rhymes(finals[i], finals[j]) and tones[i] == tones[j] and tones[i] > 0
+    )
     score += float(pair_count) * 3.0
-
     return max(0.0, min(100.0, score))
 
 
 def rhyme_report(lines: list[str]) -> dict:
-    """Return a human-readable rhyme diagnosis for the UI."""
     safe_lines = [line for line in lines if line]
     finals = [final_rhyme(line[-1]) for line in safe_lines]
     tones = [rhyme_tone(line[-1]) for line in safe_lines]
@@ -139,8 +116,6 @@ def rhyme_report(lines: list[str]) -> dict:
 
 @dataclass
 class CopyRiskIndex:
-    """Fast nearest-neighbour overlap check using an inverted 4-gram index."""
-
     texts: list[str]
     n: int = 4
 

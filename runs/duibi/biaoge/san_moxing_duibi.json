@@ -1,0 +1,41 @@
+[
+  {
+    "setting": "baseline",
+    "model": "baseline",
+    "generation": "raw",
+    "strategy": "creative_t11_p095",
+    "best_epoch": 7,
+    "test_ppl": 83.69040594632143,
+    "text_format_rate": 1.0,
+    "control_leak_rate": 0.0,
+    "acrostic_rate": 0.0,
+    "distinct_2": 0.9998148148148148,
+    "repeat_rate": 0.00018518518518518545
+  },
+  {
+    "setting": "weighted",
+    "model": "weighted",
+    "generation": "raw",
+    "strategy": "creative_t11_p095",
+    "best_epoch": 14,
+    "test_ppl": 77.60691011642055,
+    "text_format_rate": 1.0,
+    "control_leak_rate": 0.0,
+    "acrostic_rate": 0.91,
+    "distinct_2": 0.9998148148148148,
+    "repeat_rate": 0.00018518518518518545
+  },
+  {
+    "setting": "structured",
+    "model": "structured",
+    "generation": "constrained",
+    "strategy": "creative_t11_p095",
+    "best_epoch": 7,
+    "test_ppl": 51.18494596174184,
+    "text_format_rate": 1.0,
+    "control_leak_rate": 0.0,
+    "acrostic_rate": 1.0,
+    "distinct_2": 0.9988888888888888,
+    "repeat_rate": 0.0011111111111111126
+  }
+]

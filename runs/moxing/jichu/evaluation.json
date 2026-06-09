@@ -1,0 +1,38 @@
+[
+  {
+    "strategy": "stable_t07",
+    "test_ppl": 83.69040594632143,
+    "raw_text_format_rate": 1.0,
+    "raw_control_leak_rate": 0.0,
+    "constrained_format_rate": 1.0,
+    "raw_acrostic_rate": 0.0,
+    "constrained_acrostic_rate": 1.0,
+    "distinct_2": 0.9964814814814815,
+    "repeat_rate": 0.0035185185185185224,
+    "nearest_4gram_jaccard": 0.020668991926095136
+  },
+  {
+    "strategy": "balanced_t09_k20",
+    "test_ppl": 83.69040594632143,
+    "raw_text_format_rate": 1.0,
+    "raw_control_leak_rate": 0.0,
+    "constrained_format_rate": 1.0,
+    "raw_acrostic_rate": 0.0,
+    "constrained_acrostic_rate": 1.0,
+    "distinct_2": 0.9961111111111112,
+    "repeat_rate": 0.003888888888888892,
+    "nearest_4gram_jaccard": 0.02258806644767065
+  },
+  {
+    "strategy": "creative_t11_p095",
+    "test_ppl": 83.69040594632143,
+    "raw_text_format_rate": 1.0,
+    "raw_control_leak_rate": 0.0,
+    "constrained_format_rate": 1.0,
+    "raw_acrostic_rate": 0.0,
+    "constrained_acrostic_rate": 1.0,
+    "distinct_2": 0.9998148148148148,
+    "repeat_rate": 0.00018518518518518545,
+    "nearest_4gram_jaccard": 0.00721310263235729
+  }
+]

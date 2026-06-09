@@ -8,11 +8,22 @@ from pathlib import Path
 
 from src.utils.common import read_jsonl
 
-SPECIAL_TOKENS = [
-    "<PAD>", "<UNK>", "<BOS>", "<EOS>", "<SEP>",
-    "<TASK_FREE>", "<TASK_CONT>", "<TASK_ACRO>",
-    "<L1>", "<L2>", "<L3>", "<L4>",
+BASE_SPECIAL_TOKENS = [
+    "<PAD>",
+    "<UNK>",
+    "<BOS>",
+    "<EOS>",
+    "<SEP>",
+    "<TASK_FREE>",
+    "<TASK_CONT>",
+    "<TASK_ACRO>",
 ]
+LINE_TOKENS = ["<L1>", "<L2>", "<L3>", "<L4>"]
+PUNCT_TOKENS = ["，", "。", "！", "？", "；", "：", "、", ",", ".", "!", "?", ";", ":"]
+
+
+def special_tokens(include_line_tokens: bool = True) -> list[str]:
+    return [*BASE_SPECIAL_TOKENS, *(LINE_TOKENS if include_line_tokens else []), *PUNCT_TOKENS]
 
 
 @dataclass(frozen=True)
@@ -24,9 +35,13 @@ class Vocab:
 
     @classmethod
     def build(cls, poems: list[dict]) -> "Vocab":
+        return cls.build_with_options(poems)
+
+    @classmethod
+    def build_with_options(cls, poems: list[dict], include_line_tokens: bool = True) -> "Vocab":
         counter = Counter("".join(item["text"] for item in poems))
         chars = [ch for ch, _ in counter.most_common()]
-        return cls(SPECIAL_TOKENS + chars)
+        return cls(special_tokens(include_line_tokens) + chars)
 
     @classmethod
     def load(cls, path: str | Path) -> "Vocab":
@@ -70,13 +85,21 @@ class Vocab:
             if len(token) == 1 and ("\u4e00" <= token <= "\u9fff" or token == "〇")
         ]
 
+    @property
+    def punct_ids(self) -> list[int]:
+        return [self.stoi[token] for token in PUNCT_TOKENS if token in self.stoi]
+
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build a training-only character vocabulary.")
     parser.add_argument("--data_dir", default="data/processed/qijue")
     parser.add_argument("--out", default="data/processed/qijue/vocab.json")
+    parser.add_argument("--without-line-tokens", action="store_true")
     args = parser.parse_args()
-    vocab = Vocab.build(read_jsonl(Path(args.data_dir) / "train.jsonl"))
+    vocab = Vocab.build_with_options(
+        read_jsonl(Path(args.data_dir) / "train.jsonl"),
+        include_line_tokens=not args.without_line_tokens,
+    )
     vocab.save(args.out)
     print(f"saved {len(vocab.tokens)} tokens -> {args.out}")
 

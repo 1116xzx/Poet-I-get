@@ -157,6 +157,10 @@
     "test": 6833
   },
   "unique_chars": 4993,
+  "punct_distribution": {
+    "，": 273262,
+    "。": 273262
+  },
   "top_50_chars": [
     [
       "不",
