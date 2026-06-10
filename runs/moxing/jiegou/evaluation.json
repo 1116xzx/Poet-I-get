@@ -1,6 +1,6 @@
-[
+﻿[
   {
-    "strategy": "stable_t07",
+    "strategy": "stable",
     "test_ppl": 51.18494596174184,
     "raw_text_format_rate": 1.0,
     "raw_control_leak_rate": 1.0,
@@ -12,7 +12,7 @@
     "nearest_4gram_jaccard": 0.02196804577520185
   },
   {
-    "strategy": "balanced_t09_k20",
+    "strategy": "balanced",
     "test_ppl": 51.18494596174184,
     "raw_text_format_rate": 1.0,
     "raw_control_leak_rate": 1.0,
@@ -24,7 +24,7 @@
     "nearest_4gram_jaccard": 0.023455684771595965
   },
   {
-    "strategy": "creative_t11_p095",
+    "strategy": "creative",
     "test_ppl": 51.18494596174184,
     "raw_text_format_rate": 1.0,
     "raw_control_leak_rate": 1.0,

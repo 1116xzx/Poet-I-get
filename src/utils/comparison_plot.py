@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 
 
 def load_comparison(path: str | Path) -> list[dict]:
-    with Path(path).open("r", encoding="utf-8") as f:
+    with Path(path).open("r", encoding="utf-8-sig") as f:
         return json.load(f)
 
 

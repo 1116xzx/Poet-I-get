@@ -31,16 +31,18 @@ MODEL_CONFIGS = [
     },
 ]
 
+STRATEGY_NOTE = "stable: T=0.7 | balanced: T=0.9, top-k=20 | creative: T=1.1, top-p=0.95"
+
 
 def load_rows(path: str | Path) -> list[dict]:
     with Path(path).open("r", encoding="utf-8-sig", newline="") as f:
         return list(csv.DictReader(f))
 
 
-def annotate(ax, bars) -> None:
+def annotate(ax, bars, offset: float = 0.02) -> None:
     for bar in bars:
         value = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, value + 0.02, f"{value:.3f}", ha="center", va="bottom", fontsize=9)
+        ax.text(bar.get_x() + bar.get_width() / 2, value + offset, f"{value:.3f}", ha="center", va="bottom", fontsize=8)
 
 
 def plot_model(config: dict, out_dir: Path) -> None:
@@ -57,16 +59,17 @@ def plot_model(config: dict, out_dir: Path) -> None:
     bars2 = ax.bar([i + width / 2 for i in x], acrostic_values, width=width, label="acrostic rate", color="#E45756", alpha=0.9)
 
     ax.set_xticks(x, labels)
-    ax.set_ylim(0, 1.14)
+    ax.set_ylim(0, 1.20)
     ax.set_ylabel("Rate")
     ax.set_title(f"{config['name'].title()} Model: Three Sampling Strategies")
     ax.grid(axis="y", alpha=0.2)
-    ax.legend(frameon=False, ncols=2, loc="upper center")
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+    ax.text(0.5, -0.18, STRATEGY_NOTE, transform=ax.transAxes, ha="center", va="top", fontsize=7)
 
-    annotate(ax, bars1)
-    annotate(ax, bars2)
+    annotate(ax, bars1, offset=0.02)
+    annotate(ax, bars2, offset=0.06)
 
-    fig.tight_layout()
+    fig.tight_layout(rect=[0, 0.08, 0.88, 1])
     fig.savefig(out_dir / f"{config['name']}_san_caiyang_duibi.png", dpi=180, bbox_inches="tight")
     plt.close(fig)
 

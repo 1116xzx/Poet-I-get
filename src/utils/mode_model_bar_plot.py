@@ -18,6 +18,8 @@ MODELS = [
     {"name": "structured", "checkpoint": "checkpoints/gru_best.pt", "structure_constraint": True},
 ]
 
+STRATEGY_NOTE = "stable: T=0.7 | balanced: T=0.9, top-k=20 | creative: T=1.1, top-p=0.95"
+
 
 def mean(values: list[float]) -> float:
     return sum(values) / max(len(values), 1)
@@ -94,10 +96,10 @@ def save_csv(path: Path, rows: list[dict]) -> None:
         writer.writerows(rows)
 
 
-def annotate(ax, bars) -> None:
+def annotate(ax, bars, offset: float = 0.02) -> None:
     for bar in bars:
         value = bar.get_height()
-        ax.text(bar.get_x() + bar.get_width() / 2, value + 0.02, f"{value:.3f}", ha="center", va="bottom", fontsize=9)
+        ax.text(bar.get_x() + bar.get_width() / 2, value + offset, f"{value:.3f}", ha="center", va="bottom", fontsize=8)
 
 
 def plot_continue(rows: list[dict], out_path: Path) -> None:
@@ -108,12 +110,13 @@ def plot_continue(rows: list[dict], out_path: Path) -> None:
     fig, ax = plt.subplots(figsize=(11.5, 4.8))
     bars = ax.bar(range(len(labels)), values, color=[colors[row["model"]] for row in rows])
     ax.set_xticks(range(len(labels)), labels)
-    ax.set_ylim(0, 1.14)
+    ax.set_ylim(0, 1.20)
     ax.set_ylabel("Format Rate")
     ax.set_title("Continue Mode: 3 Models x 3 Sampling Strategies")
     ax.grid(axis="y", alpha=0.2)
-    annotate(ax, bars)
-    fig.tight_layout()
+    ax.text(0.5, -0.18, STRATEGY_NOTE, transform=ax.transAxes, ha="center", va="top", fontsize=7)
+    annotate(ax, bars, offset=0.02)
+    fig.tight_layout(rect=[0, 0.08, 1, 0.94])
     fig.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close(fig)
 
@@ -129,14 +132,15 @@ def plot_acrostic(rows: list[dict], out_path: Path) -> None:
     bars1 = ax.bar([i - width / 2 for i in x], format_values, width=width, label="format rate", color="#4C78A8")
     bars2 = ax.bar([i + width / 2 for i in x], acrostic_values, width=width, label="acrostic rate", color="#E45756")
     ax.set_xticks(x, labels)
-    ax.set_ylim(0, 1.14)
+    ax.set_ylim(0, 1.20)
     ax.set_ylabel("Rate")
     ax.set_title("Acrostic Mode: 3 Models x 3 Sampling Strategies")
     ax.grid(axis="y", alpha=0.2)
-    ax.legend(frameon=False, ncols=2, loc="upper center")
-    annotate(ax, bars1)
-    annotate(ax, bars2)
-    fig.tight_layout()
+    ax.legend(frameon=False, loc="upper left", bbox_to_anchor=(1.01, 1.0))
+    ax.text(0.5, -0.18, STRATEGY_NOTE, transform=ax.transAxes, ha="center", va="top", fontsize=7)
+    annotate(ax, bars1, offset=0.02)
+    annotate(ax, bars2, offset=0.06)
+    fig.tight_layout(rect=[0, 0.08, 0.88, 1])
     fig.savefig(out_path, dpi=180, bbox_inches="tight")
     plt.close(fig)
 
