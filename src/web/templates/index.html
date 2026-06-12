@@ -79,14 +79,17 @@
     display: flex; flex-direction: column; gap: 14px; margin-top: 20px;
     padding-top: 20px; border-top: 1px solid #f0f0f3;
   }
+  .switch-list.hidden { display: none; }
   .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   .switch-copy strong { display: block; font-size: 14px; font-weight: 600; }
   .switch-copy span { display: block; font-size: 12px; color: var(--text-soft); margin-top: 3px; line-height: 1.45; }
+  .model-group { display: flex; gap: 6px; flex-wrap: nowrap; justify-content: flex-end; }
   .switch-btn {
     padding: 10px 24px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; font-family: inherit;
     cursor: pointer; transition: all .25s; letter-spacing: .5px; background: #fff; color: var(--text);
     border: 1.5px solid var(--border); box-shadow: 0 1px 3px rgba(0,0,0,.04); flex-shrink: 0;
   }
+  .model-btn { padding: 8px 12px; font-size: 12px; letter-spacing: 0; }
   .switch-btn:hover { border-color: #c7c7cc; }
   .switch-btn.active { color: var(--accent); border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
   .switch-btn.disabled { opacity: .4; pointer-events: none; }
@@ -107,6 +110,30 @@
   }
   .stepper-input::-webkit-inner-spin-button, .stepper-input::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
   .stepper-input:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,113,227,.12); }
+  .mode-intro {
+    display: none;
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #f0f0f3;
+  }
+  .mode-intro.show { display: block; }
+  .intro-box {
+    padding: 14px 16px;
+    border-radius: var(--radius-sm);
+    background: #f7f7fa;
+    border: 1px solid #ececf1;
+  }
+  .intro-box strong {
+    display: block;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+  .intro-box p {
+    font-size: 13px;
+    color: var(--text-soft);
+    line-height: 1.7;
+  }
 
   .btn-generate {
     width: 100%; padding: 16px 0; border: none; background: var(--accent); color: #fff; font-size: 17px;
@@ -145,6 +172,21 @@
 
   .candidates-section { margin-top: 24px; width: 100%; border-top: 1px solid #f0f0f3; padding-top: 20px; }
   .candidates-title { font-size: 12px; color: var(--text-soft); letter-spacing: 1px; margin-bottom: 12px; }
+  .grid-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 6px;
+    text-align: center;
+    font-size: 22px;
+    font-family: "PingFang SC", "Songti SC", serif;
+  }
+  .grid-table td {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    background: #f7f7fa;
+    border: 1px solid #ececf1;
+  }
   .candidate-row {
     display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 8px;
     font-size: 14px; cursor: pointer; transition: background .15s; position: relative;
@@ -196,13 +238,14 @@
     <div class="toggle-group" id="toggleGroup">
       <button class="toggle-btn active" data-mode="continue">首句续写</button>
       <button class="toggle-btn" data-mode="acrostic">藏头诗</button>
+      <button class="toggle-btn" data-mode="chengyu">成积似涵</button>
     </div>
 
     <div style="margin-top:20px;">
       <div class="prompt-wrap">
         <input type="text" id="promptInput" placeholder="输入首句七言" maxlength="7" autocomplete="off">
         <div class="prompt-meta">
-          <span id="promptDesc">输入七字诗句，生成后三句</span>
+          <span id="promptDesc">输入七字成首句，诗人我持后三句</span>
           <span id="charHint">0 / 7</span>
         </div>
       </div>
@@ -226,20 +269,23 @@
       </div>
     </div>
 
-    <div class="switch-list">
+    <div class="switch-list" id="switchList">
       <div class="switch-row">
         <div class="switch-copy">
-          <strong>结构增强</strong>
-          <span>关闭时按模型原始生成，打开后再施加句长和位置约束。</span>
+          <strong>三模型选择</strong>
         </div>
-        <button class="switch-btn" id="structureBtn">关</button>
+        <div class="model-group" id="modelGroup">
+          <button class="switch-btn model-btn active" data-model="baseline">baseline</button>
+          <button class="switch-btn model-btn" data-model="weighted">weighted</button>
+          <button class="switch-btn model-btn" data-model="structured">structured</button>
+        </div>
       </div>
 
       <div>
         <div class="switch-row">
           <div class="switch-copy">
             <strong>押韵优化</strong>
-            <span>一次生成多首候选，再自动选出韵脚更好的结果。</span>
+            <span>多首候选同步生，韵脚最优自动呈。</span>
           </div>
           <button class="switch-btn" id="rhymeBtn">关</button>
         </div>
@@ -258,17 +304,24 @@
       </div>
     </div>
 
+    <div class="mode-intro" id="chengyuIntro">
+      <div class="intro-box">
+        <strong>成积似涵简介</strong>
+        <p>该模式固定使用 structured 模型，不再手动选择模型或押韵优化。系统会根据输入的四字藏头搜索成语字阵候选，再自动挑出更像诗的结果。</p>
+      </div>
+    </div>
+
     <button class="btn-generate" id="btnGenerate">生成</button>
   </div>
 
   <div class="poem-card">
-    <div class="poem-empty" id="poemEmpty">点击“生成”<br>诗人我持为你写诗</div>
+    <div class="poem-empty" id="poemEmpty">点击“生成”按钮后，<br>让我用最简单，最通俗易懂，最直接，最不拐弯抹角，最接地气，最大白话，最一针见血，最切中要害，最直击灵魂，最一语道破，最醍醐灌顶，最茅塞顿开的方式告诉你这首七绝诗怎么样</div>
     <div id="poemContent" style="display:none;width:100%"></div>
   </div>
 </div>
 
 <script>
-const state = { mode: "continue", structureOn: false, rhymeOn: false, kidMode: false, candCount: 10, generating: false, abortController: null };
+const state = { mode: "continue", model: "baseline", rhymeOn: false, kidMode: false, candCount: 10, generating: false, abortController: null };
 
 const $ = (id) => document.getElementById(id);
 const toggleGroup = $("toggleGroup");
@@ -281,13 +334,38 @@ const pSlider = $("topP");
 const btnGen = $("btnGenerate");
 const poemEmpty = $("poemEmpty");
 const poemContent = $("poemContent");
-const structureBtn = $("structureBtn");
+const switchList = $("switchList");
+const chengyuIntro = $("chengyuIntro");
+const modelGroup = $("modelGroup");
 const rhymeBtn = $("rhymeBtn");
 const rhymeOptions = $("rhymeOptions");
 const candCountEl = $("candCount");
 const candMinus = $("candMinus");
 const candPlus = $("candPlus");
 const kidBtn = $("kidBtn");
+
+function syncModelButtons() {
+  modelGroup.querySelectorAll(".switch-btn").forEach((item) => {
+    item.classList.toggle("active", item.dataset.model === state.model);
+  });
+}
+
+function syncModeControls() {
+  const isChengyu = state.mode === "chengyu";
+  switchList.classList.toggle("hidden", isChengyu);
+  chengyuIntro.classList.toggle("show", isChengyu);
+  if (isChengyu) {
+    state.model = "structured";
+    state.rhymeOn = false;
+    rhymeBtn.classList.remove("active");
+    rhymeBtn.classList.add("disabled");
+    rhymeBtn.textContent = "关";
+    rhymeOptions.classList.remove("show");
+    syncModelButtons();
+  } else {
+    rhymeBtn.classList.remove("disabled");
+  }
+}
 
 toggleGroup.addEventListener("click", (e) => {
   const btn = e.target.closest(".toggle-btn");
@@ -303,11 +381,15 @@ toggleGroup.addEventListener("click", (e) => {
 
   if (state.mode === "continue") {
     promptInput.placeholder = "输入首句七言";
-    promptDesc.textContent = "输入七字诗句，生成后三句";
+    promptDesc.textContent = "输入七字成首句，诗人我持后三句";
+  } else if (state.mode === "acrostic") {
+    promptInput.placeholder = "输入四个藏头字";
+    promptDesc.textContent = "四字藏头先输入，诗人我持自动出";
   } else {
     promptInput.placeholder = "输入四个藏头字";
-    promptDesc.textContent = "输入四字藏头，生成完整四句";
+    promptDesc.textContent = "四字藏头先输入，成积似涵自动出";
   }
+  syncModeControls();
 });
 
 function updateCharHint() {
@@ -324,19 +406,23 @@ syncSlider(tempSlider, $("tempVal"));
 syncSlider(kSlider, $("topKVal"));
 syncSlider(pSlider, $("topPVal"));
 
-structureBtn.addEventListener("click", () => {
-  if (state.generating) return;
-  state.structureOn = !state.structureOn;
-  structureBtn.classList.toggle("active", state.structureOn);
-  structureBtn.textContent = state.structureOn ? "开" : "关";
+modelGroup.addEventListener("click", (e) => {
+  const btn = e.target.closest("[data-model]");
+  if (!btn || state.generating) return;
+  state.model = btn.dataset.model;
+  syncModelButtons();
 });
 
 rhymeBtn.addEventListener("click", () => {
-  if (state.generating) return;
+  if (state.generating || state.mode === "chengyu") return;
   state.rhymeOn = !state.rhymeOn;
   rhymeBtn.classList.toggle("active", state.rhymeOn);
   rhymeBtn.textContent = state.rhymeOn ? "开" : "关";
   rhymeOptions.classList.toggle("show", state.rhymeOn);
+  if (state.rhymeOn) {
+    state.model = "structured";
+    syncModelButtons();
+  }
 });
 
 kidBtn.addEventListener("click", () => {
@@ -354,7 +440,7 @@ kidBtn.addEventListener("click", () => {
       parseInt(pc.dataset.numCandidates || "0", 10),
       state.kidMode,
       !!pc.dataset.candidates,
-      pc.dataset.structureConstraint === "1",
+      pc.dataset.model || "baseline",
     );
   }
 });
@@ -419,7 +505,24 @@ async function renderWithPinyin(lines) {
   }
 }
 
-async function renderDisplay(lines, mode, seed, rhymeScore, allCandidates, numCandidates, kidMode, showCandidates, structureConstraint) {
+function buildGridHtml(columns) {
+  if (!columns || !columns.length) return "";
+  const rows = [0, 1, 2, 3].map((rowIdx) => `<tr>${columns.map((column) => `<td>${column[rowIdx] || ""}</td>`).join("")}</tr>`).join("");
+  const labels = columns.map((column, idx) => `<span class="meta-chip">${idx === 0 ? `首列：${column}` : `第${idx + 1}列：${column}`}</span>`).join("");
+  return `
+    <div class="candidates-section">
+      <div class="candidates-title">字阵</div>
+      <div style="overflow:auto;">
+        <table class="grid-table">
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="poem-meta" style="margin-top:10px;">${labels}</div>
+    </div>
+  `;
+}
+
+async function renderDisplay(lines, mode, seed, rhymeScore, allCandidates, numCandidates, kidMode, showCandidates, modelName, extraData = {}) {
   poemEmpty.style.display = "none";
   poemContent.style.display = "block";
   poemContent.dataset.lines = JSON.stringify(lines);
@@ -428,7 +531,9 @@ async function renderDisplay(lines, mode, seed, rhymeScore, allCandidates, numCa
   poemContent.dataset.rhymeScore = rhymeScore !== undefined && rhymeScore !== null ? String(rhymeScore) : "";
   poemContent.dataset.candidates = showCandidates && allCandidates ? JSON.stringify(allCandidates) : "";
   poemContent.dataset.numCandidates = showCandidates ? String(numCandidates) : "0";
-  poemContent.dataset.structureConstraint = structureConstraint ? "1" : "0";
+  poemContent.dataset.model = modelName;
+  poemContent.dataset.gridColumns = extraData.gridColumns ? JSON.stringify(extraData.gridColumns) : "";
+  poemContent.dataset.modeExtra = JSON.stringify(extraData || {});
 
   let poemHtml;
   if (kidMode) {
@@ -441,13 +546,19 @@ async function renderDisplay(lines, mode, seed, rhymeScore, allCandidates, numCa
   }
 
   const meta = [
-    `<span class="meta-chip">${mode === "continue" ? "首句续写" : "藏头诗"}</span>`,
+    `<span class="meta-chip">${mode === "continue" ? "首句续写" : mode === "acrostic" ? "藏头诗" : "成积似涵"}</span>`,
+    `<span class="meta-chip">${modelName}</span>`,
   ];
   if (rhymeScore !== undefined && rhymeScore !== null) {
     meta.push(rhymeBadge(Number(rhymeScore)));
   }
+  if (mode === "chengyu" && extraData.score !== undefined) {
+    meta.push(`<span class="meta-chip">综合分 ${Number(extraData.score).toFixed(2)}</span>`);
+    meta.push(`<span class="meta-chip">NLL ${Number(extraData.nll).toFixed(2)}</span>`);
+  }
 
   let candidatesHtml = "";
+  const gridHtml = mode === "chengyu" ? buildGridHtml(extraData.gridColumns || []) : "";
   if (showCandidates && allCandidates && allCandidates.length > 1) {
     const currentText = lines.join("");
     let selectedIdx = allCandidates.findIndex((c) => c.lines.join("") === currentText);
@@ -455,25 +566,42 @@ async function renderDisplay(lines, mode, seed, rhymeScore, allCandidates, numCa
 
     candidatesHtml = `<div class="candidates-section"><div class="candidates-title">候选排行（共 ${numCandidates} 首，点击切换）</div>`;
     allCandidates.forEach((c, i) => {
-      const scoreColor = c.rhyme_score >= 50 ? "var(--green)" : c.rhyme_score >= 25 ? "var(--orange)" : "#b3261e";
+      const value = mode === "chengyu" ? c.score : c.rhyme_score;
+      const scoreColor = value >= 50 ? "var(--green)" : value >= 25 ? "var(--orange)" : "#b3261e";
       candidatesHtml += `<div class="candidate-row ${i === selectedIdx ? "best" : ""}" data-cand-idx="${i}">
         <span class="candidate-rank">#${i + 1}</span>
         <span class="candidate-text">${c.lines.join(" / ")}</span>
-        <span class="candidate-score" style="color:${scoreColor}">${c.rhyme_score}</span>
+        <span class="candidate-score" style="color:${scoreColor}">${value}</span>
         ${i === selectedIdx ? '<span class="candidate-best-tag">当前</span>' : ""}
       </div>`;
     });
     candidatesHtml += `</div>`;
   }
 
-  poemContent.innerHTML = `${poemHtml}<div class="poem-meta">${meta.join("")}</div>${candidatesHtml}`;
+  poemContent.innerHTML = `${poemHtml}<div class="poem-meta">${meta.join("")}</div>${gridHtml}${candidatesHtml}`;
 
   poemContent.querySelectorAll(".candidate-row").forEach((row) => {
     row.addEventListener("click", () => {
       const idx = parseInt(row.dataset.candIdx, 10);
       if (Number.isNaN(idx) || !allCandidates[idx]) return;
       const cand = allCandidates[idx];
-      renderDisplay(cand.lines, mode, seed, cand.rhyme_score, allCandidates, numCandidates, kidMode, showCandidates, structureConstraint);
+      renderDisplay(
+        cand.lines,
+        mode,
+        seed,
+        mode === "chengyu" ? null : cand.rhyme_score,
+        allCandidates,
+        numCandidates,
+        kidMode,
+        showCandidates,
+        modelName,
+        {
+          gridColumns: cand.columns || [],
+          score: cand.score,
+          nll: cand.nll,
+          repeatPenalty: cand.repeat_penalty,
+        },
+      );
     });
   });
 }
@@ -496,7 +624,6 @@ btnGen.addEventListener("click", async () => {
   state.generating = true;
   state.abortController = new AbortController();
   rhymeBtn.classList.add("disabled");
-  structureBtn.classList.add("disabled");
   $("controlsCard").classList.add("generating");
   btnGen.textContent = "取消";
   btnGen.style.background = "#ff3b30";
@@ -505,17 +632,18 @@ btnGen.addEventListener("click", async () => {
   poemEmpty.innerHTML = '<div class="spinner"></div>';
 
   try {
-    const endpoint = state.rhymeOn ? "/api/generate_best" : "/api/generate";
+    const endpoint = state.rhymeOn && state.mode !== "chengyu" ? "/api/generate_best" : "/api/generate";
     const body = {
       mode: state.mode,
+      model: state.mode === "chengyu" ? "structured" : state.model,
       prompt,
       temperature: parseFloat(tempSlider.value),
       top_k: parseInt(kSlider.value, 10),
       top_p: parseFloat(pSlider.value),
-      structure_constraint: state.structureOn,
-      rhyme_constraint: state.rhymeOn,
+      rhyme_constraint: state.rhymeOn && state.mode !== "chengyu",
     };
-    if (state.rhymeOn) body.num_candidates = state.candCount;
+    if (state.rhymeOn && state.mode !== "chengyu") body.num_candidates = state.candCount;
+    if (state.mode === "chengyu") body.num_candidates = Math.min(state.candCount, 10);
 
     const res = await fetch(endpoint, {
       method: "POST",
@@ -536,8 +664,14 @@ btnGen.addEventListener("click", async () => {
         data.all_candidates,
         data.num_candidates,
         state.kidMode,
-        state.rhymeOn,
-        !!data.structure_constraint,
+        state.rhymeOn || state.mode === "chengyu",
+        data.model || state.model,
+        {
+          gridColumns: data.grid_columns || [],
+          score: data.score,
+          nll: data.nll,
+          repeatPenalty: data.repeat_penalty,
+        },
       );
     }
   } catch (err) {
@@ -550,7 +684,6 @@ btnGen.addEventListener("click", async () => {
     state.generating = false;
     state.abortController = null;
     rhymeBtn.classList.remove("disabled");
-    structureBtn.classList.remove("disabled");
     $("controlsCard").classList.remove("generating");
     btnGen.textContent = "生成";
     btnGen.style.background = "";
@@ -559,6 +692,7 @@ btnGen.addEventListener("click", async () => {
 
 promptInput.addEventListener("keydown", (e) => { if (e.key === "Enter") btnGen.click(); });
 updateCharHint();
+syncModeControls();
 </script>
 </body>
 </html>

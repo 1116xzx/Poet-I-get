@@ -34,9 +34,27 @@ def final_rhyme(ch: str) -> str:
         from pypinyin import Style, lazy_pinyin
 
         result = lazy_pinyin(ch, style=Style.FINALS)
-        return result[0] if result else ""
+        return normalize_final(result[0]) if result else ""
     except ImportError:
         return ""
+
+
+def normalize_final(final: str) -> str:
+    if not final:
+        return ""
+    mapping = {
+        "iu": "ou",
+        "iou": "ou",
+        "ui": "ei",
+        "uei": "ei",
+        "un": "en",
+        "uen": "en",
+        "ve": "ue",
+        "ue": "ue",
+        "iang": "ang",
+        "uang": "ang",
+    }
+    return mapping.get(final, final)
 
 
 def rhyme_tone(ch: str) -> int:
@@ -53,48 +71,20 @@ def rhyme_tone(ch: str) -> int:
         return 0
 
 
-def rhyme_score(lines: list[str]) -> float:
-    if len(lines) != 4 or any(not line for line in lines):
-        return 0.0
+def _rhymes(a: str, b: str) -> bool:
+    if not a or not b:
+        return False
+    if a == b:
+        return True
+    return len(a) >= 2 and len(b) >= 2 and (a.endswith(b) or b.endswith(a))
 
-    finals = [final_rhyme(line[-1]) for line in lines]
-    tones = [rhyme_tone(line[-1]) for line in lines]
 
-    def _rhymes(a: str, b: str) -> bool:
-        if not a or not b:
-            return False
-        if a == b:
-            return True
-        return len(a) >= 2 and len(b) >= 2 and (a.endswith(b) or b.endswith(a))
-
-    score = 0.0
-    if _rhymes(finals[1], finals[3]):
-        score += 40.0
-        if tones[1] == tones[3] and tones[1] > 0:
-            score += 10.0
-    elif finals[1] and finals[3] and finals[1][-1] == finals[3][-1]:
-        score += 12.0
-        if tones[1] == tones[3] and tones[1] > 0:
-            score += 3.0
-
-    for i, j in [(0, 1), (0, 3)]:
-        if _rhymes(finals[i], finals[j]):
-            score += 15.0
-            if tones[i] == tones[j] and tones[i] > 0:
-                score += 5.0
-
-    if not _rhymes(finals[2], finals[1]) and not _rhymes(finals[2], finals[3]):
-        score += 20.0
-    else:
-        score -= 15.0
-
-    pair_count = sum(
-        1
-        for i, j in [(1, 3), (0, 1), (0, 3)]
-        if _rhymes(finals[i], finals[j]) and tones[i] == tones[j] and tones[i] > 0
-    )
-    score += float(pair_count) * 3.0
-    return max(0.0, min(100.0, score))
+def _near_rhymes(a: str, b: str) -> bool:
+    if _rhymes(a, b):
+        return False
+    if not a or not b:
+        return False
+    return a[-1] == b[-1]
 
 
 def rhyme_report(lines: list[str]) -> dict:
@@ -107,11 +97,63 @@ def rhyme_report(lines: list[str]) -> dict:
         if tones[i] > 0:
             label += str(tones[i])
         endings.append(label)
+
+    if len(safe_lines) < 4:
+        return {
+            "endings": endings,
+            "line2_line4_rhyme": False,
+            "line2_line4_near_rhyme": False,
+            "line1_into_rhyme": False,
+            "line3_avoids_rhyme": False,
+            "tone_bonus": 0.0,
+            "components": {},
+            "score": 0.0,
+        }
+
+    score_24 = 0.0
+    score_1 = 0.0
+    score_3 = 0.0
+    tone_bonus = 0.0
+
+    if _rhymes(finals[1], finals[3]):
+        score_24 = 50.0
+    elif _near_rhymes(finals[1], finals[3]):
+        score_24 = 20.0
+
+    if _rhymes(finals[0], finals[1]) or _rhymes(finals[0], finals[3]):
+        score_1 = 15.0
+
+    if not _rhymes(finals[2], finals[1]) and not _rhymes(finals[2], finals[3]):
+        score_3 = 20.0
+    else:
+        score_3 = -15.0
+
+    for i, j in [(1, 3), (0, 1), (0, 3)]:
+        if _rhymes(finals[i], finals[j]) and tones[i] == tones[j] and tones[i] > 0:
+            tone_bonus += 3.0
+    tone_bonus = min(tone_bonus, 10.0)
+    score = max(0.0, min(100.0, score_24 + score_1 + score_3 + tone_bonus))
     return {
         "endings": endings,
-        "line2_line4_rhyme": finals[1] == finals[3] if len(finals) >= 4 else False,
-        "score": rhyme_score(lines),
+        "line2_line4_rhyme": _rhymes(finals[1], finals[3]),
+        "line2_line4_near_rhyme": _near_rhymes(finals[1], finals[3]),
+        "line1_into_rhyme": score_1 > 0,
+        "line3_avoids_rhyme": score_3 > 0,
+        "tone_bonus": tone_bonus,
+        "components": {
+            "line2_line4": score_24,
+            "line1_bonus": score_1,
+            "line3_avoid": score_3,
+            "tone_bonus": tone_bonus,
+        },
+        "score": score,
     }
+
+
+def rhyme_score(lines: list[str]) -> float:
+    if len(lines) != 4 or any(not line for line in lines):
+        return 0.0
+    return float(rhyme_report(lines)["score"])
 
 
 @dataclass

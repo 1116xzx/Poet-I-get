@@ -69,6 +69,30 @@ def get_rhyme_candidates(vocab: Vocab, char: str) -> list[int]:
         return []
 
 
+def char_final(char: str) -> str:
+    try:
+        from pypinyin import Style, lazy_pinyin
+
+        py = lazy_pinyin(char, style=Style.FINALS)
+        return py[0] if py else ""
+    except ImportError:
+        return ""
+
+
+def rhyme_ready_ids(vocab: Vocab) -> list[int]:
+    if _rhyme_cache is None:
+        _ = _rhyme_index(vocab)
+    return sorted({cid for group in (_rhyme_cache or {}).values() for cid in group})
+
+
+def avoid_same_rhyme_ids(vocab: Vocab, char: str) -> list[int]:
+    target_final = char_final(char)
+    if not target_final:
+        return vocab.char_ids
+    ids = [cid for cid in vocab.char_ids if char_final(vocab.tokens[cid]) != target_final]
+    return ids or vocab.char_ids
+
+
 def top_k_filter(logits: torch.Tensor, k: int) -> torch.Tensor:
     if k <= 0 or k >= logits.numel():
         return logits
@@ -230,12 +254,19 @@ def generate_poem_structured(model: CharPoemLM, vocab: Vocab, mode: str, prompt:
         raise ValueError("mode must be 'continue' or 'acrostic'")
 
     rhyme_candidates: list[int] = []
+    line2_rhyme_char = ""
     decoder = IncrementalDecoder(model, vocab.encode(prefix))
     for line_idx in range(start_line, 4):
         line_chars: list[str] = []
         for char_idx in range(7):
             if heads is not None and char_idx == 0:
                 token_id = vocab.id(heads[line_idx])
+            elif rhyme_constraint and line_idx == 1 and char_idx == 6:
+                assert decoder.logits is not None
+                token_id = sample_token(decoder.logits, sampling, rhyme_ready_ids(vocab) or vocab.char_ids)
+            elif rhyme_constraint and line_idx == 2 and char_idx == 6 and line2_rhyme_char:
+                assert decoder.logits is not None
+                token_id = sample_token(decoder.logits, sampling, avoid_same_rhyme_ids(vocab, line2_rhyme_char))
             elif rhyme_constraint and line_idx == 3 and char_idx == 6 and rhyme_candidates:
                 assert decoder.logits is not None
                 token_id = sample_char_rhyme(decoder.logits, sampling, rhyme_candidates)
@@ -246,6 +277,7 @@ def generate_poem_structured(model: CharPoemLM, vocab: Vocab, mode: str, prompt:
             line_chars.append(vocab.tokens[token_id])
         lines.append("".join(line_chars))
         if rhyme_constraint and line_idx == 1:
+            line2_rhyme_char = line_chars[-1]
             rhyme_candidates = get_rhyme_candidates(vocab, line_chars[-1])
         push_punctuation(decoder, vocab, line_idx)
         if line_idx < 3:
