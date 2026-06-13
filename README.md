@@ -1,78 +1,257 @@
-# Poet-I-get — 诗人我持，七绝诗句生成模型
+# Poet-I-get
 
-本项目严格完成课程要求：只使用四句、每句七字的七言绝句；支持”首句续写”和”藏头诗”；实现 temperature、top-k、top-p；输出 Test PPL、格式合规率，并额外统计 Distinct-2、重复率与训练集近邻复写风险。
+七言绝句条件生成系统，支持首句续写、藏头诗生成，以及成语格诗扩展模块。
 
-## 设计亮点
+项目主体使用字符级 GRU 完成课程要求的主任务，并在此基础上加入了：
 
-- **统一多任务模型**：一个 checkpoint 同时支持自由建模、首句续写、藏头诗，不为两个任务分别训练模型。
-- **显式结构 token**：训练序列中加入 `<L1> ... <L4>`，模型知道句界在哪里。
-- **受约束解码**：每句严格生成 7 个汉字；藏头位置硬约束写入，因此结构稳定，不依赖后处理补救。
-- **增量推理缓存**：生成时复用 GRU/LSTM 隐状态，每生成一个字只执行一步 RNN，不重复计算整个前缀。
-- **公平采样比较**：同一 checkpoint 的 PPL 固定；采样参数只比较格式、多样性、重复和主观质量。
-- **轻量复写检测**：用倒排 4-gram Jaccard 索引检查生成结果是否过度贴近训练诗。
+- `baseline`：普通字符级 GRU
+- `weighted`：对藏头关键位置加权的 GRU
+- `structured`：加入句位标记和结构约束的 GRU
+- `成积似涵`：基于成语库、Beam Search、GRU 评分和 Prefix Global BiGRU Scorer 的扩展模块
 
-## 目录
+## 任务完成情况
+
+本项目完成的课程主任务包括：
+
+- 只使用七言绝句子集进行训练
+- 支持首句续写
+- 支持四字藏头诗生成
+- 使用字符级 GRU 建模
+- 实现多种采样策略：`stable`、`balanced`、`creative`
+- 评测指标包含 `PPL` 和格式合规率
+- 展示每种任务下的多组生成样例
+- 输出训练曲线、指标表和实验报告
+
+## 数据集
+
+数据来源：
 
 ```text
-configs/                 GRU/LSTM 配置
-src/data/                下载、清洗、词表、Dataset
-src/models/              字符级 GRU/LSTM
-src/engine/              训练、评测、生成、样例导出
-src/metrics/             格式、多样性、复写风险
-src/utils/               公共工具、训练曲线
-report/                  报告模板
+https://dicalab-scu.github.io/nlp/post/ancient-poems-dataset/
 ```
 
-## 运行步骤
+处理规则：
+
+- 只保留四句七字的七言绝句
+- 保留原始标点信息用于训练
+- 删除情绪、题材等额外标签
+
+处理后统计：
+
+- 严格七绝：`136631`
+- 训练集：`122967`
+- 验证集：`6831`
+- 测试集：`6833`
+
+## 目录说明
+
+```text
+configs/                训练配置
+checkpoints/            训练好的模型权重
+src/data/               数据预处理、词表、数据集
+src/models/             GRU 和扩展评分器模型
+src/engine/             训练、生成、评测、成语格搜索
+src/metrics/            PPL、格式、押韵等指标
+src/utils/              绘图和实验脚本
+src/web/                Flask 前端
+static/                 前端静态资源（如背景图）
+runs/moxing/            三组主模型训练与评测结果
+runs/duibi/             三模型对比图表
+report/                 报告、导出脚本和成品文件
+```
+
+## 三组主模型
+
+### 1. baseline
+
+普通字符级 GRU，不使用句位标记。
+
+配置文件：
+
+```text
+configs/gru_plain_baseline.yaml
+```
+
+权重文件：
+
+```text
+checkpoints/gru_plain_best.pt
+```
+
+### 2. weighted
+
+在 baseline 基础上，对藏头位置增加 loss 权重，增强藏头控制能力。
+
+配置文件：
+
+```text
+configs/gru_plain_weighted.yaml
+```
+
+权重文件：
+
+```text
+checkpoints/gru_plain_weighted_best.pt
+```
+
+### 3. structured
+
+加入 `<L1><L2><L3><L4>` 句位标记，并在生成阶段使用结构约束。
+
+配置文件：
+
+```text
+configs/gru_base.yaml
+```
+
+权重文件：
+
+```text
+checkpoints/gru_best.pt
+```
+
+主实验默认使用 `structured`。
+
+## 主实验结果
+
+三模型主对比结果：
+
+| 模型 | 生成方式 | Test PPL | 格式合规率 | 藏头正确率 |
+|---|---|---:|---:|---:|
+| baseline | raw | 83.690 | 1.000 | 0.000 |
+| weighted | raw | 78.264 | 1.000 | 0.930 |
+| structured | constrained | 51.185 | 1.000 | 1.000 |
+
+相关文件：
+
+- `runs/duibi/biaoge/san_moxing_duibi.csv`
+- `runs/duibi/tupian/san_moxing_ppl_duibi.png`
+- `runs/duibi/tupian/san_moxing_zhuyao_duibi.png`
+- `runs/duibi/tupian/san_moxing_zhiliang_duibi.png`
+
+## 采样策略
+
+系统使用三组采样参数：
+
+- `stable`：`temperature = 0.7`
+- `balanced`：`temperature = 0.9, top-k = 20`
+- `creative`：`temperature = 1.1, top-p = 0.95`
+
+九组合对比图：
+
+- `runs/duibi/tupian/xuxie_moshi_jiu_zuhe.png`
+- `runs/duibi/tupian/cangtou_moshi_jiu_zuhe.png`
+
+## 成积似涵扩展模块
+
+除课程主任务外，项目还包含一个成语格诗增强模块。
+
+输入四字藏头后，系统会：
+
+1. 固定首列为四个藏头字
+2. 从成语库中抽取后六列候选成语
+3. 用 Beam Search 逐列扩展候选字阵
+4. 用训练好的 GRU 计算横向诗句 NLL
+5. 结合重复惩罚、短语惩罚、风格分、押韵分进行重排序
+6. 使用 Prefix Global BiGRU Scorer 对半成品字阵进行前缀一致性评分
+
+相关代码：
+
+- `src/engine/chengyu_grid.py`
+- `src/engine/chengyu_global_beam_experiment.py`
+- `src/models/global_prefix_bigru_scorer.py`
+- `src/engine/global_prefix_score.py`
+
+相关权重：
+
+- `checkpoints/global_prefix_bigru_20e.pt`
+- `checkpoints/global_bigru_scorer_20e.pt`
+
+## 前端
+
+前端基于 Flask，入口文件：
+
+```text
+src/web/app.py
+```
+
+模板文件：
+
+```text
+src/web/templates/index.html
+```
+
+背景图资源：
+
+```text
+static/beijing.png
+```
+
+启动方式：
 
 ```bash
-pip install -r requirements.txt
+python src/web/app.py
+```
 
-# 1. 下载并严格筛选七绝
+如果本地已经配了 PowerShell 快捷命令，也可以直接使用你自己的快捷启动方式。
+
+## 训练与评测命令
+
+### 数据处理
+
+```bash
 python -m src.data.preprocess --download
-
-# 2. 只用训练集构建字符表
 python -m src.data.tokenizer
-
-# 3. 训练 GRU 主模型
-python -m src.engine.train --config configs/gru_base.yaml
-
-# 4. 画训练曲线
-python -m src.utils.plotting \
-  --metrics runs/moxing/jiegou/metrics.csv \
-  --out_dir runs/moxing/jiegou
-
-# 5. 自动评测三组采样参数
-python -m src.engine.evaluate \
-  --checkpoint checkpoints/gru_best.pt \
-  --out runs/moxing/jiegou/evaluation.csv
-
-# 6. 导出报告所需的 5 组首句续写 + 5 组藏头诗样例
-python -m src.engine.demo \
-  --checkpoint checkpoints/gru_best.pt \
-  --out_dir runs/moxing/jiegou/demo
 ```
 
-单条生成：
+### 训练主模型
 
 ```bash
-python -m src.engine.generate \
-  --checkpoint checkpoints/gru_best.pt \
-  --mode continue \
-  --prompt 春风又过江南岸 \
-  --temperature 0.9 --top_k 20
-
-python -m src.engine.generate \
-  --checkpoint checkpoints/gru_best.pt \
-  --mode acrostic \
-  --prompt 春江花月 \
-  --temperature 0.9 --top_k 20
+python -m src.engine.train --config configs/gru_plain_baseline.yaml
+python -m src.engine.train --config configs/gru_plain_weighted.yaml
+python -m src.engine.train --config configs/gru_base.yaml
 ```
 
-## 训练建议
+### 评测与样例导出
 
-首次跑通可将 `configs/gru_base.yaml` 中的 `epochs` 改成 `2`，确认完整流程无误后再改回 `30`。显存不足时，将 `batch_size` 从 `256` 改为 `128`。正式报告主表建议对比 GRU 与 LSTM；采样策略表建议对比：`T=0.7`、`T=0.9 + top-k=20`、`T=1.1 + top-p=0.95`。
+```bash
+python -m src.engine.evaluate --checkpoint checkpoints/gru_best.pt --out runs/moxing/jiegou/evaluation.csv
+python -m src.engine.demo --checkpoint checkpoints/gru_best.pt --out_dir runs/moxing/jiegou/demo
+```
 
-## checkpoint 说明
+### 绘图
 
-训练完成后，最优权重会自动保存为 `checkpoints/gru_best.pt` 或 `checkpoints/lstm_best.pt`。checkpoint 中已经包含模型配置与词表，不需要额外拼接文件即可生成。
+```bash
+python -m src.utils.comparison_plot --comparison runs/duibi/biaoge/san_moxing_duibi.json --out_dir runs/duibi/tupian
+python -m src.utils.mode_model_bar_plot
+```
+
+## 报告
+
+当前仓库中已经包含多版报告与导出脚本。
+
+推荐先看：
+
+- `report/gru_report.md`
+- `report/初版报告.md`
+- `report/七言绝句生成实验报告.docx`
+- `report/七言绝句条件生成系统实验报告_BP风格.docx`
+
+报告生成脚本：
+
+- `report/build_poem_report.py`
+- `report/build_bp_style_poem_report.py`
+
+## 当前默认建议
+
+如果只展示课程主任务，建议使用：
+
+- 主模型：`structured`
+- 采样策略：`balanced`
+
+如果展示扩展创新模块，建议同时展示：
+
+- 成积似涵
+- Prefix Global BiGRU Scorer
+- 多候选重排序与押韵评分
+
