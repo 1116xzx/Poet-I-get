@@ -12,13 +12,16 @@ from flask import Flask, jsonify, render_template, request
 # Make sure sibling packages are importable
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(PROJECT_ROOT))
+STATIC_DIR = PROJECT_ROOT / "static"
 
-from src.engine.chengyu_grid import load_idioms, search_acrostic_grid
+from src.engine.chengyu_grid import load_idioms, sample_diverse_idioms, search_acrostic_grid
+from src.engine.chengyu_global_beam_experiment import search_with_global_beam
 from src.engine.generate import SamplingConfig, generate_poem, load_checkpoint, validate_prompt
+from src.engine.global_prefix_score import load_global_prefix_scorer
 from src.metrics.poem_metrics import rhyme_report, rhyme_score
 from src.utils.common import choose_device
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder=str(STATIC_DIR), static_url_path="/static")
 app.config["TEMPLATES_AUTO_RELOAD"] = True
 
 # ── Bootstrap: load checkpoint once at startup ──────────────────────
@@ -29,6 +32,8 @@ MODEL_CONFIGS = {
     "structured": {"checkpoint": PROJECT_ROOT / "checkpoints/gru_best.pt", "structure_constraint": True},
 }
 IDIOMS_PATH = PROJECT_ROOT / "data/processed/chengyu/idioms.txt"
+GLOBAL_SCORER_PATH = PROJECT_ROOT / "checkpoints/global_bigru_scorer_20e.pt"
+GLOBAL_PREFIX_SCORER_PATH = PROJECT_ROOT / "checkpoints/global_prefix_bigru_20e.pt"
 MODEL_BUNDLES: dict[str, dict] = {}
 for model_name, cfg in MODEL_CONFIGS.items():
     loaded_model, loaded_vocab, loaded_meta = load_checkpoint(cfg["checkpoint"], device)
@@ -41,6 +46,15 @@ for model_name, cfg in MODEL_CONFIGS.items():
     print(
         f"[OK] Loaded {model_name} -- epoch {loaded_meta.get('epoch', '?')} "
         f"val_ppl={loaded_meta.get('val_ppl', '?'):.2f}"
+    )
+
+GLOBAL_PREFIX_BUNDLE: dict | None = None
+if GLOBAL_PREFIX_SCORER_PATH.exists():
+    prefix_model, prefix_vocab, prefix_meta = load_global_prefix_scorer(GLOBAL_PREFIX_SCORER_PATH, device)
+    GLOBAL_PREFIX_BUNDLE = {"model": prefix_model, "vocab": prefix_vocab, "meta": prefix_meta}
+    print(
+        f"[OK] Loaded global prefix scorer -- epoch {prefix_meta.get('epoch', '?')} "
+        f"val_loss={prefix_meta.get('val_loss', '?')}"
     )
 
 
@@ -68,35 +82,74 @@ def generate_chengyu_candidates(body: dict, mode: str, prompt: str, model_name: 
     bundle = get_model_bundle(model_name)
     num_candidates = int(body.get("num_candidates", 5))
     num_candidates = max(1, min(num_candidates, 10))
-    candidate_limit = int(body.get("candidate_limit", 500))
-    beam_size = int(body.get("beam_size", 20))
-    nll_weight = float(body.get("nll_weight", 5.5))
-    repeat_weight = float(body.get("repeat_weight", 5.0))
-    phrase_weight = float(body.get("phrase_weight", 4.0))
-    style_weight = float(body.get("style_weight", 3.0))
+    candidate_limit = int(body.get("candidate_limit", 240))
+    beam_size = int(body.get("beam_size", 8))
+    nll_weight = float(body.get("nll_weight", 9.0))
+    repeat_weight = float(body.get("repeat_weight", 11.0))
+    phrase_weight = float(body.get("phrase_weight", 10.0))
+    style_weight = float(body.get("style_weight", 5.0))
+    rhyme_weight = float(body.get("rhyme_weight", 12.0))
+    prefix_repeat_weight = float(body.get("prefix_repeat_weight", 2.0))
+    prefix_phrase_weight = float(body.get("prefix_phrase_weight", 2.5))
+    prefix_style_weight = float(body.get("prefix_style_weight", 1.2))
+    enable_global_rerank = bool(body.get("enable_global_rerank", True))
+    global_weight = float(body.get("global_weight", 4.0))
+    global_rerank_top_n = int(body.get("global_rerank_top_n", 12))
     poetic_only = not bool(body.get("all_idioms", False))
+    diverse_idioms = bool(body.get("diverse_idioms", True))
+    full_idiom_pool = bool(body.get("full_idiom_pool", True))
+    pool_seed = int(body.get("seed", random.randint(0, 2**31)))
 
     idioms = load_idioms(
         IDIOMS_PATH,
         bundle["vocab"],
-        limit=candidate_limit,
+        limit=0 if full_idiom_pool else candidate_limit,
         poetic_only=poetic_only,
         allow_repeated_idioms=False,
+        diverse=diverse_idioms,
     )
+    source_idiom_count = len(idioms)
+    if full_idiom_pool:
+        idioms = sample_diverse_idioms(idioms, candidate_limit, seed=pool_seed)
     if not idioms:
         raise ValueError("成语库为空，暂时无法生成成积似涵结果。")
-    candidates = search_acrostic_grid(
-        prompt,
-        bundle["model"],
-        bundle["vocab"],
-        idioms,
-        beam_size=beam_size,
-        top_k=num_candidates,
-        nll_weight=nll_weight,
-        repeat_weight=repeat_weight,
-        phrase_weight=phrase_weight,
-        style_weight=style_weight,
-    )
+    if GLOBAL_PREFIX_BUNDLE is not None:
+        candidates = search_with_global_beam(
+            prompt,
+            bundle["model"],
+            bundle["vocab"],
+            idioms,
+            GLOBAL_PREFIX_BUNDLE["model"],
+            GLOBAL_PREFIX_BUNDLE["vocab"],
+            device,
+            beam_size=beam_size,
+            top_k=num_candidates,
+            nll_weight=nll_weight,
+            repeat_weight=repeat_weight,
+            phrase_weight=phrase_weight,
+            style_weight=style_weight,
+            rhyme_weight=rhyme_weight,
+            prefix_repeat_weight=prefix_repeat_weight,
+            prefix_phrase_weight=prefix_phrase_weight,
+            prefix_style_weight=prefix_style_weight,
+        )
+    else:
+        candidates = search_acrostic_grid(
+            prompt,
+            bundle["model"],
+            bundle["vocab"],
+            idioms,
+            beam_size=beam_size,
+            top_k=num_candidates,
+            nll_weight=nll_weight,
+            repeat_weight=repeat_weight,
+            phrase_weight=phrase_weight,
+            style_weight=style_weight,
+            rhyme_weight=rhyme_weight,
+            global_scorer_path=GLOBAL_SCORER_PATH if enable_global_rerank and GLOBAL_SCORER_PATH.exists() else None,
+            global_rerank_top_n=global_rerank_top_n,
+            global_weight=global_weight,
+        )
     best = candidates[0]
     all_candidates = [
         {
@@ -107,6 +160,10 @@ def generate_chengyu_candidates(body: dict, mode: str, prompt: str, model_name: 
             "repeat_penalty": round(candidate.repeat_penalty, 4),
             "phrase_penalty": round(candidate.phrase_penalty, 4),
             "style_penalty": round(candidate.style_penalty, 4),
+            "rhyme_score": round(candidate.rhyme_score_value, 2),
+            "global_pll": round(candidate.global_pll, 4),
+            "base_rank": candidate.base_rank,
+            "rerank_delta": round(candidate.rerank_delta, 4),
         }
         for candidate in candidates
     ]
@@ -124,7 +181,13 @@ def generate_chengyu_candidates(body: dict, mode: str, prompt: str, model_name: 
         "repeat_penalty": round(best.repeat_penalty, 4),
         "phrase_penalty": round(best.phrase_penalty, 4),
         "style_penalty": round(best.style_penalty, 4),
+        "rhyme_score": round(best.rhyme_score_value, 2),
+        "global_pll": round(best.global_pll, 4),
+        "base_rank": best.base_rank,
+        "rerank_delta": round(best.rerank_delta, 4),
         "num_candidates": num_candidates,
+        "source_idiom_count": source_idiom_count,
+        "active_idiom_count": len(idioms),
         "all_candidates": all_candidates,
     }
 
