@@ -452,7 +452,7 @@ def search_acrostic_grid(
     vocab,
     idioms: list[str],
     beam_size: int = 20,
-    top_k: int = 5,
+    top_n: int = 5,
     nll_weight: float = 5.5,
     repeat_weight: float = 5.0,
     phrase_weight: float = 4.0,
@@ -485,7 +485,7 @@ def search_acrostic_grid(
             rhyme_weight,
             beam_size,
         )
-    candidates = beam[: max(top_k, min(global_rerank_top_n, len(beam)))]
+    candidates = beam[: max(top_n, min(global_rerank_top_n, len(beam)))]
     if global_scorer_path:
         scorer_device = next(model.parameters()).device
         global_model, global_vocab, _ = load_global_scorer(global_scorer_path, scorer_device)
@@ -511,7 +511,7 @@ def search_acrostic_grid(
         reranked.sort(key=lambda item: item.score)
         tail = candidates[rerank_count:]
         candidates = [*reranked, *tail]
-    return candidates[:top_k]
+    return candidates[:top_n]
 
 
 def write_markdown(path: str | Path, acrostic: str, candidates: list[GridCandidate]) -> None:
@@ -585,7 +585,7 @@ def main() -> None:
     parser.add_argument("--all_idioms", action="store_true", help="Disable poetic idiom filtering.")
     parser.add_argument("--allow_repeated_idioms", action="store_true", help="Allow idioms with repeated internal characters, such as 风风雨雨.")
     parser.add_argument("--beam_size", type=int, default=20)
-    parser.add_argument("--top_k", type=int, default=5)
+    parser.add_argument("--top_n", type=int, default=5)
     parser.add_argument("--nll_weight", type=float, default=5.5)
     parser.add_argument("--repeat_weight", type=float, default=5.0)
     parser.add_argument("--phrase_weight", type=float, default=4.0)
@@ -613,7 +613,7 @@ def main() -> None:
         vocab,
         idioms,
         args.beam_size,
-        args.top_k,
+        args.top_n,
         args.nll_weight,
         args.repeat_weight,
         args.phrase_weight,

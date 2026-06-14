@@ -350,7 +350,7 @@ def build_report() -> Path:
     )
     set_paragraph_text(
         doc.add_paragraph(),
-        "实验结果表明，baseline、weighted 和 structured 三种模型的测试集 PPL 分别为 83.690、78.264 和 51.185；三者格式合规率均为 1.000；藏头正确率分别为 0.000、0.930 和 1.000。综合各项指标，structured 模型表现最佳，说明任务控制 token、句位结构建模、押韵评分和成语候选重排序机制能够有效提升七言绝句条件生成的稳定性与可控性。",
+        "实验结果表明，baseline、weighted 和 structured 三种模型的测试集 PPL 分别为 83.690、78.264 和 51.185；三者格式合规率均达到 1.000；藏头正确率分别为 0.000、0.890 和 1.000。综合各项指标，structured 模型表现最佳，说明任务控制 token、句位结构建模、押韵评分和成语候选重排序机制能够有效提升七言绝句条件生成的稳定性与可控性。",
     )
     p = doc.add_paragraph()
     p.paragraph_format.first_line_indent = Cm(0)
@@ -427,7 +427,7 @@ def build_report() -> Path:
     add_heading(doc, "采样策略", 2)
     set_paragraph_text(
         doc.add_paragraph(),
-        "生成阶段比较了三种采样策略：stable 使用较低 temperature 获得更稳定结果；balanced 结合 temperature=0.9 与 top-k=20，在可读性和多样性之间取得平衡；creative 使用更高 temperature 和 top-p 采样，生成结果更新颖，但语义跳跃风险也更高。",
+        "生成阶段比较了三种 temperature 采样策略：stable 使用较低 temperature 获得更稳定结果；balanced 使用 temperature=1.0，表示不额外调整模型概率分布；creative 使用 temperature=1.3，生成结果更新颖，但语义跳跃风险也更高。",
     )
 
     add_heading(doc, "训练曲线与模型指标", 1)
@@ -474,7 +474,7 @@ def build_report() -> Path:
                 str(weighted_best_epoch),
                 format_metric(weighted_eval[2]["test_ppl"]),
                 "1.000",
-                "0.930",
+                "0.890",
                 format_metric(weighted_eval[2]["distinct_2"]),
                 format_metric(weighted_eval[2]["repeat_rate"]),
             ],

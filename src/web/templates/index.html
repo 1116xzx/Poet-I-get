@@ -111,6 +111,7 @@
     display: flex; flex-direction: column; gap: 14px; margin-top: 20px;
     padding-top: 20px; border-top: 1px solid #f0f0f3;
   }
+  .slider-group.hidden { display: none; }
   .switch-list.hidden { display: none; }
   .switch-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
   .switch-copy strong { display: block; font-size: 14px; font-weight: 600; }
@@ -286,21 +287,11 @@
       </div>
     </div>
 
-    <div class="slider-group" style="margin-top:20px;">
+    <div class="slider-group" id="samplingGroup" style="margin-top:20px;">
       <div class="slider-row">
         <span class="slider-label">Temperature</span>
-        <input type="range" id="temperature" min="0.3" max="1.5" step="0.05" value="0.9">
-        <span class="slider-val" id="tempVal">0.9</span>
-      </div>
-      <div class="slider-row">
-        <span class="slider-label">Top-k</span>
-        <input type="range" id="topK" min="0" max="100" step="5" value="20">
-        <span class="slider-val" id="topKVal">20</span>
-      </div>
-      <div class="slider-row">
-        <span class="slider-label">Top-p</span>
-        <input type="range" id="topP" min="0.5" max="1.0" step="0.05" value="1.0">
-        <span class="slider-val" id="topPVal">1.0</span>
+        <input type="range" id="temperature" min="0.3" max="1.5" step="0.05" value="1.0">
+        <span class="slider-val" id="tempVal">1.0</span>
       </div>
     </div>
 
@@ -364,8 +355,7 @@ const promptInput = $("promptInput");
 const charHint = $("charHint");
 const promptDesc = $("promptDesc");
 const tempSlider = $("temperature");
-const kSlider = $("topK");
-const pSlider = $("topP");
+const samplingGroup = $("samplingGroup");
 const btnGen = $("btnGenerate");
 const poemEmpty = $("poemEmpty");
 const poemContent = $("poemContent");
@@ -389,6 +379,7 @@ function syncModeControls() {
   const isChengyu = state.mode === "chengyu";
   switchList.classList.toggle("hidden", isChengyu);
   chengyuIntro.classList.toggle("show", isChengyu);
+  samplingGroup.classList.toggle("hidden", isChengyu);
   if (isChengyu) {
     state.model = "structured";
     state.rhymeOn = false;
@@ -438,8 +429,6 @@ function syncSlider(slider, display) {
   slider.addEventListener("input", () => { display.textContent = slider.value; });
 }
 syncSlider(tempSlider, $("tempVal"));
-syncSlider(kSlider, $("topKVal"));
-syncSlider(pSlider, $("topPVal"));
 
 modelGroup.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-model]");
@@ -681,8 +670,6 @@ btnGen.addEventListener("click", async () => {
       model: state.mode === "chengyu" ? "structured" : state.model,
       prompt,
       temperature: parseFloat(tempSlider.value),
-      top_k: parseInt(kSlider.value, 10),
-      top_p: parseFloat(pSlider.value),
       rhyme_constraint: state.rhymeOn && state.mode !== "chengyu",
     };
     if (state.rhymeOn && state.mode !== "chengyu") body.num_candidates = state.candCount;

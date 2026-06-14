@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from pathlib import Path
 
@@ -36,8 +36,9 @@ def test_end_to_end_smoke(tmp_path: Path) -> None:
     logits = model(batch["input_ids"])
     assert logits.shape[:2] == batch["input_ids"].shape
 
-    lines = generate_poem(model, vocab, "continue", "春风又过江南岸", SamplingConfig(0.9, 10, 1.0))
+    lines = generate_poem(model, vocab, "continue", "春风又过江南岸", SamplingConfig(1.0))
     assert strict_format_ok(lines)
     heads = "".join(line[0] for line in poems[0]["lines"])
-    acro = generate_poem(model, vocab, "acrostic", heads, SamplingConfig(0.9, 10, 1.0))
+    acro = generate_poem(model, vocab, "acrostic", heads, SamplingConfig(1.0))
     assert acrostic_ok(acro, heads)
+

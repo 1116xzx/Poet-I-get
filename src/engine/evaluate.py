@@ -18,9 +18,9 @@ from src.metrics.poem_metrics import CopyRiskIndex, acrostic_ok, distinct_n, rep
 from src.utils.common import choose_device, read_jsonl, save_json, seed_everything
 
 STRATEGIES = {
-    "stable": SamplingConfig(temperature=0.7, top_k=0, top_p=1.0),
-    "balanced": SamplingConfig(temperature=0.9, top_k=20, top_p=1.0),
-    "creative": SamplingConfig(temperature=1.1, top_k=0, top_p=0.95),
+    "stable": SamplingConfig(temperature=0.7),
+    "balanced": SamplingConfig(temperature=1.0),
+    "creative": SamplingConfig(temperature=1.3),
 }
 
 

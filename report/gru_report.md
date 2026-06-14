@@ -16,8 +16,8 @@
 | 策略 | 参数 |
 |---|---|
 | stable | temperature = 0.7 |
-| balanced | temperature = 0.9, top-k = 20 |
-| creative | temperature = 1.1, top-p = 0.95 |
+| balanced | temperature = 1.0 |
+| creative | temperature = 1.3 |
 
 ## 2. 数据处理
 
@@ -125,15 +125,15 @@ runs/duibi/tupian/san_moxing_ppl_duibi.png
 | 模型 | 生成方式 | Best Epoch | Test PPL | 格式合规率 | 藏头正确率 | Distinct-2 | 重复率 |
 |---|---|---:|---:|---:|---:|---:|---:|
 | baseline | raw | 7 | 83.690 | 1.000 | 0.000 | 0.9998 | 0.0002 |
-| weighted | raw | 11 | 78.264 | 1.000 | 0.930 | 0.9996 | 0.0004 |
-| structured | constrained | 7 | 51.185 | 1.000 | 1.000 | 0.9989 | 0.0011 |
+| weighted | raw | 11 | 78.264 | 1.000 | 0.890 | 0.9993 | 0.0007 |
+| structured | constrained | 7 | 51.185 | 1.000 | 1.000 | 0.9980 | 0.0020 |
 
 结果说明：
 
 | 结论 | 说明 |
 |---|---|
-| baseline 能学到七绝格式 | 格式率达到 1.000，但几乎不能稳定完成藏头 |
-| weighted 明显改善藏头 | 通过提高藏头位置 loss 权重，藏头正确率提升到 0.930 |
+| baseline 能学到七绝格式 | 格式率接近 1.000，但几乎不能稳定完成藏头 |
+| weighted 明显改善藏头 | 通过提高藏头位置 loss 权重，藏头正确率提升到 0.890 |
 | structured 整体最好 | 句位标记 + 结构约束使 Test PPL 最低，藏头正确率达到 1.000 |
 
 ## 6. 三采样策略对比
@@ -196,7 +196,7 @@ runs/duibi/tupian/cangtou_moshi_jiu_zuhe.png
 | 首句续写 | 已完成 |
 | 藏头诗 | 已完成 |
 | 字符级 GRU | 已完成 |
-| temperature / top-k / top-p 采样 | 已完成 |
+| temperature 采样 | 已完成 |
 | PPL 评测 | 已完成 |
 | 格式合规率 | 已完成 |
 | 每种条件输入至少 5 组样例 | 已完成 |
@@ -205,4 +205,3 @@ runs/duibi/tupian/cangtou_moshi_jiu_zuhe.png
 | 训练曲线和指标表 | 已生成 |
 
 最终建议使用 `structured` 模型作为展示主模型。它在 Test PPL、格式合规率和藏头正确率上表现最好，适合作为系统默认生成方式。
-

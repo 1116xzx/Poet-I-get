@@ -129,6 +129,22 @@ def plot_val_ppl_compare(metric_paths: list[tuple[str, str | Path]], out_path: s
     plt.close(fig)
 
 
+def plot_test_ppl_bar(rows: list[dict], out_path: str | Path) -> None:
+    labels = [pretty_label(row["setting"]) for row in rows]
+    ppl_values = [float(row["test_ppl"]) for row in rows]
+    colors = ["#4C78A8", "#72B7B2", "#F58518"]
+
+    fig, ax = plt.subplots(figsize=(6.8, 4.4))
+    bars = ax.bar(labels, ppl_values, color=colors)
+    ax.set_ylabel("Test PPL")
+    ax.set_title("Three Models: Test PPL")
+    ax.grid(axis="y", alpha=0.2)
+    annotate_bars(ax, bars, ".3f", offset=0.8)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=180, bbox_inches="tight")
+    plt.close(fig)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--comparison", default="runs/duibi/biaoge/san_moxing_duibi.json")
@@ -144,6 +160,7 @@ def main() -> None:
     rows = load_comparison(args.comparison)
     plot_main_comparison(rows, out_dir / "san_moxing_zhuyao_duibi.png")
     plot_structure_comparison(rows, out_dir / "san_moxing_zhiliang_duibi.png")
+    plot_test_ppl_bar(rows, out_dir / "san_moxing_test_ppl_duibi.png")
     plot_val_ppl_compare(
         [
             ("baseline", args.baseline_metrics),

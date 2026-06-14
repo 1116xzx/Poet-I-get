@@ -11,7 +11,7 @@
 - 支持首句续写：输入 7 字首句，生成后 3 句。
 - 支持藏头诗：输入 4 个藏头字，生成完整 4 句。
 - 模型主体使用字符级 GRU。
-- 实现 `temperature`、`top-k`、`top-p` 等采样策略。
+- 实现 `temperature` 采样策略。
 - 评测指标包含困惑度 `PPL` 和格式合规率。
 - 输出训练曲线、指标表、生成样例和实验报告。
 
@@ -45,7 +45,7 @@ https://dicalab-scu.github.io/nlp/post/ancient-poems-dataset/
 | 模型 | 生成方式 | Test PPL | 格式合规率 | 藏头正确率 |
 |---|---|---:|---:|---:|
 | baseline | raw | 83.690 | 1.000 | 0.000 |
-| weighted | raw | 78.264 | 1.000 | 0.930 |
+| weighted | raw | 78.264 | 1.000 | 0.890 |
 | structured | constrained | 51.185 | 1.000 | 1.000 |
 
 采样策略：
@@ -53,8 +53,8 @@ https://dicalab-scu.github.io/nlp/post/ancient-poems-dataset/
 | 策略 | 参数 |
 |---|---|
 | stable | `temperature=0.7` |
-| balanced | `temperature=0.9, top-k=20` |
-| creative | `temperature=1.1, top-p=0.95` |
+| balanced | `temperature=1.0` |
+| creative | `temperature=1.3` |
 
 ## 3. 创新点
 
@@ -198,4 +198,3 @@ runs/moxing/jiegou/demo/samples.md
 - 竖向成语列
 - GRU NLL 评分
 - Prefix Global BiGRU Scorer 的中途路径筛选作用
-

@@ -122,7 +122,7 @@ def search_with_global_beam(
     device: torch.device,
     *,
     beam_size: int = 5,
-    top_k: int = 5,
+    top_n: int = 5,
     nll_weight: float = 7.0,
     repeat_weight: float = 11.0,
     phrase_weight: float = 6.0,
@@ -160,7 +160,7 @@ def search_with_global_beam(
         rhyme_weight=rhyme_weight,
         phrase_stats_path=phrase_stats_path,
     )
-    return finals[:top_k]
+    return finals[:top_n]
 
 
 def write_csv(path: str | Path, acrostic: str, candidates: list[GridCandidate]) -> None:
@@ -210,7 +210,7 @@ def main() -> None:
     parser.add_argument("--idioms", default="data/processed/chengyu/idioms.txt")
     parser.add_argument("--candidate_limit", type=int, default=240)
     parser.add_argument("--beam_size", type=int, default=5)
-    parser.add_argument("--top_k", type=int, default=5)
+    parser.add_argument("--top_n", type=int, default=5)
     parser.add_argument("--nll_weight", type=float, default=7.0)
     parser.add_argument("--repeat_weight", type=float, default=11.0)
     parser.add_argument("--phrase_weight", type=float, default=6.0)
@@ -238,7 +238,7 @@ def main() -> None:
         global_vocab,
         device,
         beam_size=args.beam_size,
-        top_k=args.top_k,
+        top_n=args.top_n,
         nll_weight=args.nll_weight,
         repeat_weight=args.repeat_weight,
         phrase_weight=args.phrase_weight,

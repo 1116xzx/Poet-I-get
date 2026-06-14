@@ -243,7 +243,7 @@ def build():
     para(doc, "本实验面向七言绝句条件生成任务，基于课程提供的数据集严格筛选四句、每句七字的七言绝句子集，构建了一个可控古诗生成系统。系统支持“首句续写”和“藏头诗”两种条件输入形式，输出固定为四句、每句七字的七言绝句。")
     para(doc, "模型方面，本文以字符级 GRU 为基础，采用统一多任务建模方式，比较了 baseline、weighted 和 structured 三种模型。baseline 为普通字符级 GRU；weighted 模型通过提高藏头位置的损失权重，增强对条件首字的学习能力；structured 模型进一步引入任务控制 token 与句位标记 token，并结合结构化解码策略，以提升诗句边界、句间结构和条件约束的控制能力。")
     para(doc, "在生成策略与系统扩展方面，本文加入了简化押韵评分机制和成语格藏头诗增强模块。押韵评分重点考察第 2 句和第 4 句尾字是否同韵，并将第 1 句入韵和第 3 句避韵作为辅助评分依据。成语格藏头诗增强模块将四字藏头扩展为 4×7 字阵，横向读取为四句七言诗，纵向读取为藏头字与成语列，并结合成语库约束、GRU 负对数似然评分、押韵分和 BiGRU 全局一致性评分进行候选重排序。")
-    para(doc, "实验结果表明，baseline、weighted 和 structured 三种模型的测试集 PPL 分别为 83.690、78.264 和 51.185；三者格式合规率均为 1.000；藏头正确率分别为 0.000、0.930 和 1.000。综合各项指标，structured 模型表现最佳。", )
+    para(doc, "实验结果表明，baseline、weighted 和 structured 三种模型的测试集 PPL 分别为 83.690、78.264 和 51.185；三者格式合规率均达到 1.000；藏头正确率分别为 0.000、0.890 和 1.000。综合各项指标，structured 模型表现最佳。", )
     para(doc, "关键词：七言绝句；条件生成；字符级 GRU；藏头诗；押韵评分；成语格生成", indent=False)
 
     heading(doc, "引言", 1)
@@ -284,7 +284,7 @@ def build():
     heading(doc, "三种模型对比设计", 2)
     para(doc, "baseline 模型是普通字符级 GRU，用于观察基础模型能否学习七言绝句格式。weighted 模型在 baseline 基础上提高藏头位置的损失权重，使模型更重视每句首字。structured 模型进一步加入任务控制 token、句位标记 token 和结构化解码，用于显式控制诗句边界和条件约束。")
     heading(doc, "采样策略设计", 2)
-    para(doc, "生成阶段比较了 stable、balanced 和 creative 三种采样策略。stable 使用较低 temperature，结果更稳定但较保守；balanced 使用 temperature=0.9 和 top-k=20，在稳定性和多样性之间较均衡；creative 使用较高 temperature 和 top-p，结果更新颖，但更容易出现语义跳跃。")
+    para(doc, "生成阶段比较了 stable、balanced 和 creative 三种 temperature 采样策略。stable 使用较低 temperature，结果更稳定但较保守；balanced 使用 temperature=1.0，表示不额外调整模型概率分布；creative 使用 temperature=1.3，结果更新颖，但更容易出现语义跳跃。")
     heading(doc, "押韵评分与候选重排序", 2)
     para(doc, "为了提升生成结果的古诗风格，系统加入简化押韵评分机制。该机制重点检查第 2 句和第 4 句尾字是否同韵，同时考虑第 1 句入韵和第 3 句避韵。对于藏头诗增强模式，系统还会结合成语库约束、GRU 负对数似然、押韵分和 BiGRU 全局一致性评分，对多个候选结果进行排序。")
     heading(doc, "成语格藏头诗增强模块", 2)
@@ -301,7 +301,7 @@ def build():
         ["模型", "Best Epoch", "Test PPL", "格式合规率", "藏头正确率"],
         [
             ["baseline", str(baseline_epoch), f"{baseline_eval['test_ppl']:.3f}", "1.000", "0.000"],
-            ["weighted", str(weighted_epoch), f"{weighted_eval['test_ppl']:.3f}", "1.000", "0.930"],
+            ["weighted", str(weighted_epoch), f"{weighted_eval['test_ppl']:.3f}", "1.000", "0.890"],
             ["structured", str(structured_epoch), f"{structured_eval['test_ppl']:.3f}", "1.000", "1.000"],
         ],
         widths=[1.2, 1.0, 1.0, 1.2, 1.2],
@@ -314,8 +314,8 @@ def build():
         ["策略", "参数设置", "生成特点"],
         [
             ["stable", "temperature=0.7", "结果稳定，但表达偏保守"],
-            ["balanced", "temperature=0.9，top-k=20", "连贯性和多样性较均衡"],
-            ["creative", "temperature=1.1，top-p=0.95", "更新颖，但语义跳跃风险更高"],
+            ["balanced", "temperature=1.0", "默认温度，不额外调整概率分布"],
+            ["creative", "temperature=1.3", "更新颖，但语义跳跃风险更高"],
         ],
         widths=[1.2, 2.0, 3.0],
     )

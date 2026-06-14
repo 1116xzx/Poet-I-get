@@ -123,7 +123,7 @@ def generate_chengyu_candidates(body: dict, mode: str, prompt: str, model_name: 
             GLOBAL_PREFIX_BUNDLE["vocab"],
             device,
             beam_size=beam_size,
-            top_k=num_candidates,
+            top_n=num_candidates,
             nll_weight=nll_weight,
             repeat_weight=repeat_weight,
             phrase_weight=phrase_weight,
@@ -140,7 +140,7 @@ def generate_chengyu_candidates(body: dict, mode: str, prompt: str, model_name: 
             bundle["vocab"],
             idioms,
             beam_size=beam_size,
-            top_k=num_candidates,
+            top_n=num_candidates,
             nll_weight=nll_weight,
             repeat_weight=repeat_weight,
             phrase_weight=phrase_weight,
@@ -203,9 +203,7 @@ def api_generate() -> tuple:
     mode: str = body.get("mode", "continue")
     prompt: str = body.get("prompt", "")
     requested_model: str = body.get("model", "structured")
-    temperature: float = float(body.get("temperature", 0.9))
-    top_k: int = int(body.get("top_k", 20))
-    top_p: float = float(body.get("top_p", 1.0))
+    temperature: float = float(body.get("temperature", 1.0))
     seed: int = int(body.get("seed", random.randint(0, 2**31)))
     rhyme_constraint: bool = bool(body.get("rhyme_constraint", False))
     model_name = resolve_model_name(requested_model, rhyme_constraint, mode)
@@ -223,7 +221,7 @@ def api_generate() -> tuple:
         except ValueError as e:
             return jsonify({"ok": False, "error": str(e)}), 400
 
-    sampling = SamplingConfig(temperature=temperature, top_k=top_k, top_p=top_p)
+    sampling = SamplingConfig(temperature=temperature)
     torch.manual_seed(seed)
     lines = generate_poem(
         bundle["model"],
@@ -255,9 +253,7 @@ def api_generate_best() -> tuple:
     mode: str = body.get("mode", "continue")
     prompt: str = body.get("prompt", "")
     requested_model: str = body.get("model", "structured")
-    temperature: float = float(body.get("temperature", 0.9))
-    top_k: int = int(body.get("top_k", 20))
-    top_p: float = float(body.get("top_p", 1.0))
+    temperature: float = float(body.get("temperature", 1.0))
     num_candidates: int = int(body.get("num_candidates", 10))
     base_seed: int = int(body.get("seed", random.randint(0, 2**31)))
     rhyme_constraint: bool = bool(body.get("rhyme_constraint", True))
@@ -281,7 +277,7 @@ def api_generate_best() -> tuple:
     if num_candidates > 50:
         num_candidates = 50  # safety cap
 
-    sampling = SamplingConfig(temperature=temperature, top_k=top_k, top_p=top_p)
+    sampling = SamplingConfig(temperature=temperature)
 
     best_lines: list[str] | None = None
     best_score: float = -1.0

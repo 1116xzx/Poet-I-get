@@ -31,7 +31,7 @@ MODEL_CONFIGS = [
     },
 ]
 
-STRATEGY_NOTE = "stable: T=0.7 | balanced: T=0.9, top-k=20 | creative: T=1.1, top-p=0.95"
+STRATEGY_NOTE = "stable: T=0.7 | balanced: T=1.0 | creative: T=1.3"
 
 
 def load_rows(path: str | Path) -> list[dict]:

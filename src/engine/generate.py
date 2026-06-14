@@ -20,9 +20,7 @@ _rhyme_cache: dict[str, list[int]] | None = None
 
 @dataclass(frozen=True)
 class SamplingConfig:
-    temperature: float = 0.9
-    top_k: int = 20
-    top_p: float = 1.0
+    temperature: float = 1.0
 
 
 @dataclass(frozen=True)
@@ -93,26 +91,6 @@ def avoid_same_rhyme_ids(vocab: Vocab, char: str) -> list[int]:
     return ids or vocab.char_ids
 
 
-def top_k_filter(logits: torch.Tensor, k: int) -> torch.Tensor:
-    if k <= 0 or k >= logits.numel():
-        return logits
-    cutoff = torch.topk(logits, k).values[-1]
-    return logits.masked_fill(logits < cutoff, float("-inf"))
-
-
-def top_p_filter(logits: torch.Tensor, p: float) -> torch.Tensor:
-    if p >= 1.0:
-        return logits
-    sorted_logits, sorted_idx = torch.sort(logits, descending=True)
-    sorted_probs = F.softmax(sorted_logits, dim=-1)
-    remove = torch.cumsum(sorted_probs, dim=-1) > p
-    remove[1:] = remove[:-1].clone()
-    remove[0] = False
-    filtered = logits.clone()
-    filtered[sorted_idx[remove]] = float("-inf")
-    return filtered
-
-
 def load_checkpoint(path: str | Path, device: torch.device) -> tuple[CharPoemLM, Vocab, dict]:
     bundle = torch.load(path, map_location=device)
     vocab = Vocab(bundle["vocab_tokens"])
@@ -144,8 +122,6 @@ def sample_token(logits: torch.Tensor, sampling: SamplingConfig, allowed_ids: li
     allowed[allowed_ids] = True
     filtered = logits.masked_fill(~allowed, float("-inf"))
     filtered = filtered / max(sampling.temperature, 1e-5)
-    filtered = top_k_filter(filtered, sampling.top_k)
-    filtered = top_p_filter(filtered, sampling.top_p)
     return int(torch.multinomial(F.softmax(filtered, dim=-1), 1).item())
 
 
@@ -363,9 +339,7 @@ def main() -> None:
     parser.add_argument("--checkpoint", required=True)
     parser.add_argument("--mode", choices=["continue", "acrostic"], required=True)
     parser.add_argument("--prompt", required=True)
-    parser.add_argument("--temperature", type=float, default=0.9)
-    parser.add_argument("--top_k", type=int, default=20)
-    parser.add_argument("--top_p", type=float, default=1.0)
+    parser.add_argument("--temperature", type=float, default=1.0)
     parser.add_argument("--num_return_sequences", type=int, default=1)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="auto")
@@ -373,7 +347,7 @@ def main() -> None:
 
     device = choose_device(args.device)
     model, vocab, _ = load_checkpoint(args.checkpoint, device)
-    sampling = SamplingConfig(args.temperature, args.top_k, args.top_p)
+    sampling = SamplingConfig(args.temperature)
     rows = []
     for offset in range(args.num_return_sequences):
         seed_everything(args.seed + offset)
