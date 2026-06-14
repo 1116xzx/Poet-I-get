@@ -4,7 +4,7 @@ from pathlib import Path
 
 import torch
 
-from src.data.global_scorer_dataset import COL_IDS, LINE_LEN, NUM_LINES, ROW_IDS, SEQ_LEN
+from src.data.global_prefix_scorer_dataset import COL_IDS, LINE_LEN, NUM_LINES, ROW_IDS, SEQ_LEN
 from src.data.tokenizer import Vocab
 from src.models.global_prefix_bigru_scorer import GlobalPrefixBiGRUScorer
 

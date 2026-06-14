@@ -1,118 +1,220 @@
 # Poet-I-get
 
-基于字符级 GRU 的七言绝句条件生成系统。项目支持首句续写、四字藏头诗生成，并额外实现了一个面向展示的成语格诗增强模块“成积似涵”。
+Poet-I-get 是一个基于字符级 GRU 的七言绝句条件生成系统。项目完成了课程要求中的首句续写、四字藏头诗生成、采样策略比较、PPL 与格式合规率评测，并额外实现了一个带展示效果的创新模块：**成积似涵**，即“藏头字 + 竖向成语格”的七言绝句生成。
 
 ## 1. 项目任务
 
-本项目完成课程要求的七言绝句生成任务：
+本项目面向七言绝句生成，输入和输出形式如下：
 
-- 数据集使用 ancient-poems-dataset。
-- 只筛选四句、每句七字的七言绝句。
-- 支持首句续写：输入 7 字首句，生成后 3 句。
-- 支持藏头诗：输入 4 个藏头字，生成完整 4 句。
-- 模型主体使用字符级 GRU。
-- 实现 `temperature` 采样策略。
-- 评测指标包含困惑度 `PPL` 和格式合规率。
-- 输出训练曲线、指标表、生成样例和实验报告。
+- 首句续写：输入 7 个汉字作为第一句，模型生成后三句。
+- 藏头诗：输入 4 个汉字，分别作为四句首字，模型生成完整四句。
+- 输出格式：四句，每句 7 个汉字，不含标点。
 
-数据来源：
+数据集来自：
 
 ```text
 https://dicalab-scu.github.io/nlp/post/ancient-poems-dataset/
 ```
 
-处理后数据规模：
+项目只保留七言绝句子集，即四句、每句七字的诗。处理后的数据位于：
 
-| 数据项 | 数量 |
-|---|---:|
-| 严格七绝 | 136631 |
-| 训练集 | 122967 |
-| 验证集 | 6831 |
-| 测试集 | 6833 |
+```text
+data/processed/qijue/
+```
 
-## 2. 模型设置
+主要文件：
 
-项目训练了三组 GRU 模型，用于比较不同结构设计对生成效果的影响。
+| 文件 | 说明 |
+|---|---|
+| `train.jsonl` | 训练集 |
+| `valid.jsonl` | 验证集 |
+| `test.jsonl` | 测试集 |
+| `vocab.json` | structured 模型使用的词表 |
+| `vocab_plain.json` | baseline / weighted 模型使用的词表 |
+| `stats.json` | 数据统计信息 |
+
+## 2. 模型设计
+
+项目最终保留三组 GRU 模型：
 
 | 模型 | 配置文件 | checkpoint | 说明 |
 |---|---|---|---|
-| baseline | `configs/gru_plain_baseline.yaml` | `checkpoints/gru_plain_best.pt` | 普通字符级 GRU，不使用句位标记 |
-| weighted | `configs/gru_plain_weighted.yaml` | `checkpoints/gru_plain_weighted_best.pt` | 在藏头句首位置提高 loss 权重 |
-| structured | `configs/gru_base.yaml` | `checkpoints/gru_best.pt` | 加入 `<L1><L2><L3><L4>` 句位标记，并在推理时使用结构约束 |
+| baseline | `configs/gru_plain_baseline.yaml` | `checkpoints/gru_plain_best.pt` | 普通字符级 GRU，多任务训练，不加入句位标记 |
+| weighted | `configs/gru_plain_weighted.yaml` | `checkpoints/gru_plain_weighted_best.pt` | 在 baseline 基础上，对藏头任务中的四个句首位置加大 loss 权重 |
+| structured | `configs/gru_base.yaml` | `checkpoints/gru_best.pt` | 加入 `<L1><L2><L3><L4>` 句位标记，推理时使用结构约束 |
 
-主实验结果：
+三个模型的关系是递进的：
 
-| 模型 | 生成方式 | Test PPL | 格式合规率 | 藏头正确率 |
-|---|---|---:|---:|---:|
-| baseline | raw | 83.690 | 1.000 | 0.000 |
-| weighted | raw | 78.264 | 1.000 | 0.890 |
-| structured | constrained | 51.185 | 1.000 | 1.000 |
+1. baseline 作为基础模型，验证普通字符级 GRU 是否能学到七言绝句的语言和格式。
+2. weighted 在不加入句位标记的情况下，通过提高藏头句首位置的训练权重，增强藏头控制能力。
+3. structured 在训练序列中显式加入句位标记，并在推理阶段约束每句 7 字、藏头字固定到句首，使格式和控制更稳定。
 
-采样策略：
+## 3. 训练序列
 
-| 策略 | 参数 |
+模型采用字符级语言模型训练方式，即根据前文预测下一个字符。
+
+以藏头诗为例，baseline / weighted 的训练序列类似：
+
+```text
+<BOS> <TASK_ACRO> <SEP> 春 江 花 月 <SEP>
+春......，江......。花......，月......。 <EOS>
+```
+
+structured 模型额外加入句位标记：
+
+```text
+<BOS> <TASK_ACRO> <SEP> 春 江 花 月 <SEP>
+<L1> 春......，
+<L2> 江......。
+<L3> 花......，
+<L4> 月......。 <EOS>
+```
+
+句位标记的作用是告诉模型当前正在生成第几句，使模型更容易学习四句结构。
+
+## 4. 采样策略
+
+项目最终保留 temperature 采样，并设置三档：
+
+| 策略 | 参数 | 特点 |
+|---|---|---|
+| stable | `temperature=0.7` | 更保守，重复风险较低，但变化少 |
+| balanced | `temperature=1.0` | 默认采样强度 |
+| creative | `temperature=1.3` | 更随机，结果更有变化，但格式和控制可能下降 |
+
+说明：PPL 是在测试集上计算的模型指标，不依赖采样策略；格式率和藏头率来自生成样例，因此会受到采样策略影响。
+
+## 5. 评测指标
+
+项目主要使用以下指标：
+
+| 指标 | 含义 |
 |---|---|
-| stable | `temperature=0.7` |
-| balanced | `temperature=1.0` |
-| creative | `temperature=1.3` |
+| Test PPL | 测试集困惑度，越低表示模型越能预测测试集中的古诗字符 |
+| 格式合规率 | 生成结果是否满足四句、每句七字 |
+| 藏头正确率 | 四句首字是否与输入的四个藏头字一致 |
 
-## 3. 创新点
+PPL 的计算公式为：
 
-### 3.1 藏头位置加权训练
+```text
+PPL = exp(平均交叉熵 loss)
+```
 
-`weighted` 模型在训练时对藏头任务中的四个句首位置设置更高 loss 权重。这样模型会更重视“输入藏头字”和“句首生成位置”之间的对应关系，从而提高无结构标记情况下的藏头正确率。
+也就是说，模型在测试集上预测下一个字符越准确，loss 越低，PPL 也越低。
 
-### 3.2 句位标记与结构约束
+## 6. 最终实验结果
 
-`structured` 模型在训练序列中加入 `<L1><L2><L3><L4>`，使模型显式感知当前处于第几句。推理阶段再配合结构约束，控制每句 7 个汉字，并在藏头模式中固定四句句首字，从而保证七言绝句格式稳定。
+最终结果文件位于：
 
-### 3.3 押韵评分重排序
+```text
+runs/duibi/biaoge/
+runs/duibi/tupian/
+```
 
-前端支持多候选生成，并通过押韵评分对候选结果排序。评分重点考虑第 2、4 句是否押韵，第 1 句是否入韵，第 3 句是否避韵，用于从多首候选诗中选择韵脚更自然的结果。
+三模型主对比表：
 
-### 3.4 成积似涵：成语格诗增强模块
+```text
+runs/duibi/biaoge/san_moxing_duibi.csv
+runs/duibi/biaoge/san_moxing_duibi.json
+runs/duibi/biaoge/san_moxing_duibi.md
+```
 
-“成积似涵”是项目的扩展创新模块。它将四字藏头诗表示为一个 `4 x 7` 字阵：横向读是四句七言诗，纵向读则是首列藏头字和后六列四字成语。
+续写和藏头模式的三模型、三采样策略对比：
 
-真实生成流程如下：
+```text
+runs/duibi/biaoge/xuxie_moshi_jiu_zuhe.csv
+runs/duibi/biaoge/cangtou_moshi_jiu_zuhe.csv
+```
 
-1. 将四个藏头字固定为字阵第一列。
-2. 从成语库中筛选模型词表内可识别的四字成语。
-3. 默认从全量可用成语池中按类别抽样 240 个候选成语。
-4. 使用 Beam Search 逐列扩展后六列成语。
-5. 在 Beam Search 中，使用 Prefix Global BiGRU Scorer 对当前半成品字阵的新生成列进行前缀一致性评分。
-6. 在 Beam Search 中同时加入重复惩罚、短语惩罚和风格惩罚，提前削弱横向表达生硬的路径。
-7. 完整字阵生成后，使用训练好的 GRU 七绝语言模型计算横向四句诗的 NLL。
-8. 最终结合 GRU NLL、重复惩罚、短语惩罚、风格惩罚和押韵分进行综合排序。
+训练曲线和单模型评测位于：
 
-这里需要区分两个模型的作用：
+```text
+runs/moxing/jichu/      baseline
+runs/moxing/jiaquan/    weighted
+runs/moxing/jiegou/     structured
+```
 
-- `GRU`：用于完整候选结果的横向诗句 NLL 评分，判断横着读是否像七言绝句。
-- `Prefix Global BiGRU Scorer`：用于 Beam Search 中途，对尚未完成的半成品字阵进行前缀一致性评分。
+每个模型目录中保留：
+
+| 文件 | 说明 |
+|---|---|
+| `metrics.csv` | 训练过程中的 train loss、train PPL、val loss、val PPL |
+| `evaluation.csv` | 测试集评测结果 |
+| `evaluation.json` | 测试集评测结果 JSON 版 |
+| `train_ppl_curve.png` | 训练集 PPL 曲线 |
+| `val_ppl_curve.png` | 验证集 PPL 曲线 |
+
+## 7. 创新点
+
+### 7.1 藏头位置加权训练
+
+weighted 模型对藏头任务中的四个句首字设置更高的 loss 权重。普通训练时每个字符的重要性相同，但藏头诗最关键的是四句句首字是否正确。因此该模型在训练阶段让句首藏头位置受到更大惩罚，从而增强模型对藏头条件的学习。
+
+### 7.2 句位标记与结构约束
+
+structured 模型在训练序列中加入 `<L1><L2><L3><L4>`，让模型显式感知当前句子位置。推理时再配合结构约束，保证每句 7 字，并在藏头模式下固定四句首字。该方法使格式合规率和藏头正确率更稳定。
+
+需要说明的是，结构约束不是训练模型本身的参数变化，而是推理阶段的解码策略。报告中应表述为：structured 模型结合结构化训练和约束解码，提高了格式和藏头控制稳定性。
+
+### 7.3 押韵评分重排序
+
+前端支持押韵优化。系统会一次生成多首候选诗，再根据押韵规则进行重排序，优先返回韵脚更自然的结果。
+
+押韵评分主要考虑：
+
+- 第 2 句和第 4 句是否押韵。
+- 第 1 句是否入韵。
+- 第 3 句是否避开主韵。
+- 声调一致性作为小幅奖励。
+
+对于 baseline 和 weighted，押韵优化只是“多候选生成 + 押韵分重排”，不会偷偷切换模型；对于 structured，开启押韵优化时可以进一步使用结构化押韵约束。
+
+### 7.4 成积似涵：成语格藏头诗增强模块
+
+“成积似涵”是项目的扩展展示模块。它面向四字藏头输入，将诗表示为一个 `4 x 7` 字阵：
+
+```text
+藏 ? ? ? ? ? ?
+头 ? ? ? ? ? ?
+诗 ? ? ? ? ? ?
+字 ? ? ? ? ? ?
+```
+
+第一列固定为用户输入的四个藏头字，后六列从成语库中选择四字成语。这样横向读是四句七言诗，纵向读是藏头字和六个四字成语。
+
+生成过程分两步：
+
+1. Beam Search 中途筛选半成品  
+   每加入一列成语，就形成一个半成品字阵。系统使用 Prefix Global BiGRU Scorer 判断当前半成品整体是否协调，同时结合重复惩罚、短语惩罚和风格惩罚，只保留较好的候选路径继续扩展。
+
+2. 完整候选最终重排序  
+   当字阵填满 7 列后，系统使用训练好的 GRU 计算横向四句诗的 NLL，并结合重复惩罚、短语惩罚、风格惩罚和押韵分进行综合排序，选出最终结果。
+
+这里有两个模型分工：
+
+| 模型 | 作用 |
+|---|---|
+| GRU 七绝语言模型 | 判断完整候选横向读起来是否像七言绝句 |
+| Prefix Global BiGRU Scorer | 在 Beam Search 中途判断半成品字阵是否协调 |
 
 相关代码：
 
 | 文件 | 作用 |
 |---|---|
-| `src/engine/chengyu_grid.py` | 成语库读取、候选评分、基础成语格搜索 |
+| `src/engine/chengyu_grid.py` | 成语库读取、候选打分、基础成语格搜索 |
 | `src/engine/chengyu_global_beam_experiment.py` | Prefix Global BiGRU 引导的 Beam Search |
-| `src/engine/global_prefix_score.py` | 前缀一致性评分接口 |
-| `src/models/global_prefix_bigru_scorer.py` | Prefix Global BiGRU Scorer 模型 |
+| `src/engine/global_prefix_score.py` | Prefix Global BiGRU 评分接口 |
+| `src/models/global_prefix_bigru_scorer.py` | Prefix Global BiGRU 模型 |
+| `src/data/global_prefix_scorer_dataset.py` | Prefix Global BiGRU 训练数据构造 |
 
-相关 checkpoint：
+## 8. 前端
+
+前端使用 Flask 实现，入口为：
 
 ```text
-checkpoints/global_prefix_bigru_20e.pt
-checkpoints/global_bigru_scorer_20e.pt
+src/web/app.py
+src/web/templates/index.html
 ```
-
-## 4. 前端
-
-前端使用 Flask 实现，支持三种功能：
-
-- 首句续写
-- 藏头诗
-- 成积似涵
 
 启动方式：
 
@@ -120,27 +222,49 @@ checkpoints/global_bigru_scorer_20e.pt
 python src/web/app.py
 ```
 
-前端入口：
+页面支持：
 
-```text
-src/web/app.py
-src/web/templates/index.html
-```
+- 首句续写
+- 藏头诗
+- 成积似涵
+- 三模型切换
+- temperature 调节
+- 押韵优化
+- 多候选展示
 
-背景图：
+背景图位于：
 
 ```text
 static/beijing.png
 ```
 
-## 5. 训练与评测命令
+## 9. 复现命令
 
-训练三组主模型：
+安装依赖：
+
+```bash
+pip install -r requirements.txt
+```
+
+重新处理数据：
+
+```bash
+python -m src.data.preprocess --download
+python -m src.data.prepare_chengyu
+```
+
+训练三个 GRU 模型：
 
 ```bash
 python -m src.engine.train --config configs/gru_plain_baseline.yaml
 python -m src.engine.train --config configs/gru_plain_weighted.yaml
 python -m src.engine.train --config configs/gru_base.yaml
+```
+
+训练 Prefix Global BiGRU：
+
+```bash
+python -m src.engine.train_global_prefix_scorer --config configs/global_prefix_bigru_20e.yaml
 ```
 
 评测 structured 模型：
@@ -149,52 +273,48 @@ python -m src.engine.train --config configs/gru_base.yaml
 python -m src.engine.evaluate --checkpoint checkpoints/gru_best.pt --out runs/moxing/jiegou/evaluation.csv
 ```
 
-导出生成样例：
-
-```bash
-python -m src.engine.demo --checkpoint checkpoints/gru_best.pt --out_dir runs/moxing/jiegou/demo
-```
-
-绘制对比图：
+重画对比图：
 
 ```bash
 python -m src.utils.comparison_plot --comparison runs/duibi/biaoge/san_moxing_duibi.json --out_dir runs/duibi/tupian
 python -m src.utils.mode_model_bar_plot
+python -m src.utils.model_strategy_bar_plot
 ```
 
-## 6. 报告与结果文件
+启动前端：
 
-主要报告：
+```bash
+python src/web/app.py
+```
+
+也可以使用 Makefile：
+
+```bash
+make train-baseline
+make train-weighted
+make train-structured
+make train-prefix
+make web
+```
+
+## 10. 目录结构
 
 ```text
-report/gru_report.md
-report/初版报告.md
-report/七言绝句生成实验报告.docx
-report/七言绝句条件生成系统实验报告_BP风格.docx
+configs/       最终训练配置
+checkpoints/   最终模型权重
+data/          原始数据、成语库、处理后的七绝数据
+src/           数据处理、训练、生成、评测、前端代码
+runs/          最终训练曲线、评测表和对比图
+static/        前端背景图
+tests/         smoke test
 ```
 
-主要结果：
+## 11. 最小测试
 
-```text
-runs/duibi/biaoge/san_moxing_duibi.csv
-runs/duibi/tupian/san_moxing_ppl_duibi.png
-runs/duibi/tupian/xuxie_moshi_jiu_zuhe.png
-runs/duibi/tupian/cangtou_moshi_jiu_zuhe.png
-runs/moxing/jiegou/demo/samples.md
+项目保留了一个 smoke test，用于检查数据处理、词表、模型前向传播、续写生成和藏头生成是否能跑通：
+
+```bash
+python -m pytest tests/test_smoke.py -p no:cacheprovider
 ```
 
-## 7. 推荐展示方式
-
-课程主任务建议展示：
-
-- `structured` 模型
-- `balanced` 采样策略
-- 首句续写和藏头诗各 5 组样例
-- PPL、格式合规率、藏头正确率对比表
-
-创新模块建议展示：
-
-- 成积似涵字阵
-- 竖向成语列
-- GRU NLL 评分
-- Prefix Global BiGRU Scorer 的中途路径筛选作用
+当前版本已通过该测试。

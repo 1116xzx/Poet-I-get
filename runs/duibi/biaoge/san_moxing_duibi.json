@@ -21,9 +21,9 @@
     "test_ppl": "78.26419210920834",
     "text_format_rate": "1.0",
     "control_leak_rate": "0.0",
-    "acrostic_rate": "0.93",
-    "distinct_2": "0.9996296296296296",
-    "repeat_rate": "0.0003703703703703709"
+    "acrostic_rate": "0.72",
+    "distinct_2": "0.9998148148148148",
+    "repeat_rate": "0.00018518518518518545"
   },
   {
     "setting": "structured",

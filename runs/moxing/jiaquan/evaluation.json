@@ -5,11 +5,11 @@
     "raw_text_format_rate": 1.0,
     "raw_control_leak_rate": 0.0,
     "constrained_format_rate": 1.0,
-    "raw_acrostic_rate": 0.94,
+    "raw_acrostic_rate": 0.93,
     "constrained_acrostic_rate": 1.0,
-    "distinct_2": 0.9983333333333333,
-    "repeat_rate": 0.0016666666666666692,
-    "nearest_4gram_jaccard": 0.01889175547647366
+    "distinct_2": 0.9985185185185185,
+    "repeat_rate": 0.0014814814814814836,
+    "nearest_4gram_jaccard": 0.018045962024957993
   },
   {
     "strategy": "balanced",
@@ -17,11 +17,11 @@
     "raw_text_format_rate": 1.0,
     "raw_control_leak_rate": 0.0,
     "constrained_format_rate": 1.0,
-    "raw_acrostic_rate": 0.9,
+    "raw_acrostic_rate": 0.82,
     "constrained_acrostic_rate": 1.0,
-    "distinct_2": 0.9979629629629629,
-    "repeat_rate": 0.002037037037037039,
-    "nearest_4gram_jaccard": 0.020625906583725068
+    "distinct_2": 0.9998148148148148,
+    "repeat_rate": 0.00018518518518518545,
+    "nearest_4gram_jaccard": 0.009516107167504683
   },
   {
     "strategy": "creative",
@@ -29,10 +29,10 @@
     "raw_text_format_rate": 1.0,
     "raw_control_leak_rate": 0.0,
     "constrained_format_rate": 1.0,
-    "raw_acrostic_rate": 0.93,
+    "raw_acrostic_rate": 0.72,
     "constrained_acrostic_rate": 1.0,
-    "distinct_2": 0.9996296296296296,
-    "repeat_rate": 0.0003703703703703709,
-    "nearest_4gram_jaccard": 0.007723306713989944
+    "distinct_2": 0.9998148148148148,
+    "repeat_rate": 0.00018518518518518545,
+    "nearest_4gram_jaccard": 0.003939293108547767
   }
 ]

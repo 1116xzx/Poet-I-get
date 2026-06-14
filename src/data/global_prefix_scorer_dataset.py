@@ -6,8 +6,31 @@ from typing import Sequence
 import torch
 from torch.utils.data import Dataset
 
-from src.data.global_scorer_dataset import COL_IDS, LINE_LEN, NUM_LINES, ROW_IDS, SEQ_LEN, flatten_poem_lines
 from src.data.tokenizer import Vocab
+
+NUM_LINES = 4
+LINE_LEN = 7
+SEQ_LEN = NUM_LINES * LINE_LEN
+
+
+def flatten_poem_lines(poem: dict) -> list[str]:
+    lines = poem["lines"]
+    if len(lines) != NUM_LINES or any(len(line) != LINE_LEN for line in lines):
+        raise ValueError("expected a 4x7 qijue poem")
+    return [ch for line in lines for ch in line]
+
+
+def position_metadata() -> tuple[list[int], list[int]]:
+    row_ids: list[int] = []
+    col_ids: list[int] = []
+    for row in range(NUM_LINES):
+        for col in range(LINE_LEN):
+            row_ids.append(row)
+            col_ids.append(col)
+    return row_ids, col_ids
+
+
+ROW_IDS, COL_IDS = position_metadata()
 
 
 @dataclass(frozen=True)

@@ -2,20 +2,25 @@
 
 ```text
 runs/
-  moxing/
-    jichu/      plain baseline de xunlian, pingce, quxian
-    jiaquan/    cangtou loss jiaquan de xunlian, pingce, quxian
-    jiegou/     jia ru juwei token de structured model
-  duibi/
-    biaoge/     duibi jieguo csv/json/md
-    tupian/     baogao yong duibi tupian
+  moxing/          san ge GRU moxing de xunlian, pingce, quxian
+    jichu/         baseline
+    jiaquan/       weighted
+    jiegou/        structured
+
+  duibi/           baogao zhong yao yong de zui zhong duibi jieguo
+    biaoge/        csv / json / md zhibiao biao
+    tupian/        ppl, geshi lv, cangtou lv deng tupian
+
 ```
 
-Chang yong wenjian:
+Zui zhong baogao yong:
 
-- `runs/duibi/biaoge/jichu_jiaquan_duibi.md`
-- `runs/duibi/biaoge/san_shezhi_duibi.md`
-- `runs/duibi/tupian/jichu_jiaquan_cangtou_duibi.png`
-- `runs/duibi/tupian/jichu_jiaquan_ppl_duibi.png`
-- `runs/duibi/tupian/san_shezhi_zhuyao_duibi.png`
-- `runs/duibi/tupian/san_shezhi_zhiliang_duibi.png`
+- `runs/moxing/*/metrics.csv`
+- `runs/moxing/*/evaluation.csv`
+- `runs/moxing/*/*_curve.png`
+- `runs/duibi/biaoge/san_moxing_duibi.*`
+- `runs/duibi/biaoge/xuxie_moshi_jiu_zuhe.csv`
+- `runs/duibi/biaoge/cangtou_moshi_jiu_zuhe.csv`
+- `runs/duibi/tupian/*.png`
+
+Lishi tiaocan wenjian yi qingli, dangqian `runs/` zhi baoliu zui zhong xunlian yu duibi jieguo.

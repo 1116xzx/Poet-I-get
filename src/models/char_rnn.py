@@ -19,11 +19,12 @@ class CharPoemLM(nn.Module):
         rnn_type: str = "gru",
     ) -> None:
         super().__init__()
+        if rnn_type.lower() != "gru":
+            raise ValueError("This final project version keeps only GRU checkpoints.")
         self.max_len = max_len
         self.token_emb = nn.Embedding(vocab_size, emb_dim)
         self.pos_emb = nn.Embedding(max_len, pos_dim)
-        rnn_cls = {"gru": nn.GRU, "lstm": nn.LSTM}[rnn_type.lower()]
-        self.rnn = rnn_cls(
+        self.rnn = nn.GRU(
             input_size=emb_dim + pos_dim,
             hidden_size=hidden_size,
             num_layers=num_layers,
@@ -43,7 +44,7 @@ class CharPoemLM(nn.Module):
         return self.head(self.norm(hidden))
 
     def step(self, token_ids: torch.Tensor, position: int, state=None):
-        """Run one autoregressive step while reusing the GRU/LSTM hidden state."""
+        """Run one autoregressive step while reusing the GRU hidden state."""
         if position >= self.max_len:
             raise ValueError(f"position {position} exceeds max_len={self.max_len}")
         pos = torch.full_like(token_ids, position)

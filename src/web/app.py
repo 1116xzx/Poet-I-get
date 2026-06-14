@@ -32,7 +32,6 @@ MODEL_CONFIGS = {
     "structured": {"checkpoint": PROJECT_ROOT / "checkpoints/gru_best.pt", "structure_constraint": True},
 }
 IDIOMS_PATH = PROJECT_ROOT / "data/processed/chengyu/idioms.txt"
-GLOBAL_SCORER_PATH = PROJECT_ROOT / "checkpoints/global_bigru_scorer_20e.pt"
 GLOBAL_PREFIX_SCORER_PATH = PROJECT_ROOT / "checkpoints/global_prefix_bigru_20e.pt"
 MODEL_BUNDLES: dict[str, dict] = {}
 for model_name, cfg in MODEL_CONFIGS.items():
@@ -65,8 +64,6 @@ def get_model_bundle(model_name: str) -> dict:
 def resolve_model_name(model_name: str, rhyme_constraint: bool, mode: str | None = None) -> str:
     if mode == "chengyu":
         return "structured"
-    if rhyme_constraint:
-        return "structured"
     return model_name if model_name in MODEL_BUNDLES else "structured"
 
 
@@ -92,9 +89,6 @@ def generate_chengyu_candidates(body: dict, mode: str, prompt: str, model_name: 
     prefix_repeat_weight = float(body.get("prefix_repeat_weight", 2.0))
     prefix_phrase_weight = float(body.get("prefix_phrase_weight", 2.5))
     prefix_style_weight = float(body.get("prefix_style_weight", 1.2))
-    enable_global_rerank = bool(body.get("enable_global_rerank", True))
-    global_weight = float(body.get("global_weight", 4.0))
-    global_rerank_top_n = int(body.get("global_rerank_top_n", 12))
     poetic_only = not bool(body.get("all_idioms", False))
     diverse_idioms = bool(body.get("diverse_idioms", True))
     full_idiom_pool = bool(body.get("full_idiom_pool", True))
@@ -146,9 +140,6 @@ def generate_chengyu_candidates(body: dict, mode: str, prompt: str, model_name: 
             phrase_weight=phrase_weight,
             style_weight=style_weight,
             rhyme_weight=rhyme_weight,
-            global_scorer_path=GLOBAL_SCORER_PATH if enable_global_rerank and GLOBAL_SCORER_PATH.exists() else None,
-            global_rerank_top_n=global_rerank_top_n,
-            global_weight=global_weight,
         )
     best = candidates[0]
     all_candidates = [

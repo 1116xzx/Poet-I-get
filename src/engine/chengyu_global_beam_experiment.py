@@ -221,7 +221,7 @@ def main() -> None:
     parser.add_argument("--prefix_style_weight", type=float, default=0.8)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="auto")
-    parser.add_argument("--out_csv", default="runs/chengyu_global_beam_exp/candidates.csv")
+    parser.add_argument("--out_csv", default="runs/duibi/biaoge/chengyu_global_beam_candidates.csv")
     args = parser.parse_args()
 
     seed_everything(args.seed)

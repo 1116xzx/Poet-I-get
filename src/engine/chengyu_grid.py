@@ -14,7 +14,6 @@ import torch
 import torch.nn.functional as F
 
 from src.data.dataset import punctuated_line, structured_poem
-from src.engine.global_score import load_global_scorer, pseudo_log_likelihood
 from src.engine.generate import load_checkpoint
 from src.metrics.poem_metrics import rhyme_score
 from src.utils.common import choose_device, seed_everything
@@ -459,9 +458,6 @@ def search_acrostic_grid(
     style_weight: float = 3.0,
     rhyme_weight: float = 6.0,
     phrase_stats_path: str | Path = DEFAULT_PHRASE_STATS_PATH,
-    global_scorer_path: str | Path | None = None,
-    global_rerank_top_n: int = 20,
-    global_weight: float = 3.0,
 ) -> list[GridCandidate]:
     if len(acrostic) != 4 or not is_chinese_word(acrostic):
         raise ValueError("acrostic must contain exactly four Chinese characters")
@@ -485,33 +481,7 @@ def search_acrostic_grid(
             rhyme_weight,
             beam_size,
         )
-    candidates = beam[: max(top_n, min(global_rerank_top_n, len(beam)))]
-    if global_scorer_path:
-        scorer_device = next(model.parameters()).device
-        global_model, global_vocab, _ = load_global_scorer(global_scorer_path, scorer_device)
-        rerank_count = min(global_rerank_top_n, len(candidates))
-        reranked: list[GridCandidate] = []
-        for idx, candidate in enumerate(candidates[:rerank_count], start=1):
-            pll = pseudo_log_likelihood(candidate.lines, global_model, global_vocab, scorer_device)
-            final_score = candidate.score - global_weight * pll
-            reranked.append(
-                GridCandidate(
-                    candidate.columns,
-                    final_score,
-                    candidate.nll,
-                    candidate.repeat_penalty,
-                    candidate.phrase_penalty,
-                    candidate.style_penalty,
-                    candidate.rhyme_score_value,
-                    global_pll=pll,
-                    rerank_delta=final_score - candidate.score,
-                    base_rank=idx,
-                )
-            )
-        reranked.sort(key=lambda item: item.score)
-        tail = candidates[rerank_count:]
-        candidates = [*reranked, *tail]
-    return candidates[:top_n]
+    return beam[:top_n]
 
 
 def write_markdown(path: str | Path, acrostic: str, candidates: list[GridCandidate]) -> None:
@@ -592,13 +562,10 @@ def main() -> None:
     parser.add_argument("--style_weight", type=float, default=3.0)
     parser.add_argument("--rhyme_weight", type=float, default=6.0)
     parser.add_argument("--phrase_stats", default=str(DEFAULT_PHRASE_STATS_PATH))
-    parser.add_argument("--global_scorer", default="")
-    parser.add_argument("--global_rerank_top_n", type=int, default=20)
-    parser.add_argument("--global_weight", type=float, default=3.0)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--device", default="auto")
-    parser.add_argument("--out_md", default="runs/chengyu_grid/acrostic_samples.md")
-    parser.add_argument("--out_csv", default="runs/chengyu_grid/acrostic_samples.csv")
+    parser.add_argument("--out_md", default="runs/duibi/biaoge/chengyu_grid_samples.md")
+    parser.add_argument("--out_csv", default="runs/duibi/biaoge/chengyu_grid_samples.csv")
     args = parser.parse_args()
 
     seed_everything(args.seed)
@@ -620,9 +587,6 @@ def main() -> None:
         args.style_weight,
         args.rhyme_weight,
         args.phrase_stats,
-        args.global_scorer or None,
-        args.global_rerank_top_n,
-        args.global_weight,
     )
     write_markdown(args.out_md, args.acrostic, candidates)
     write_csv(args.out_csv, args.acrostic, candidates)

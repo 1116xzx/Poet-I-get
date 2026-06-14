@@ -2,22 +2,30 @@ PYTHON ?= python
 
 prepare:
 	$(PYTHON) -m src.data.preprocess --download
-	$(PYTHON) -m src.data.tokenizer
+	$(PYTHON) -m src.data.prepare_chengyu
 
-train-gru:
+train-baseline:
+	$(PYTHON) -m src.engine.train --config configs/gru_plain_baseline.yaml
+
+train-weighted:
+	$(PYTHON) -m src.engine.train --config configs/gru_plain_weighted.yaml
+
+train-structured:
 	$(PYTHON) -m src.engine.train --config configs/gru_base.yaml
 
-train-lstm:
-	$(PYTHON) -m src.engine.train --config configs/lstm_base.yaml
+train-prefix:
+	$(PYTHON) -m src.engine.train_global_prefix_scorer --config configs/global_prefix_bigru_20e.yaml
 
-evaluate:
-	$(PYTHON) -m src.engine.evaluate --checkpoint checkpoints/gru_best.pt
-
-demo:
-	$(PYTHON) -m src.engine.demo --checkpoint checkpoints/gru_best.pt
+evaluate-structured:
+	$(PYTHON) -m src.engine.evaluate --checkpoint checkpoints/gru_best.pt --out runs/moxing/jiegou/evaluation.csv
 
 plot:
-	$(PYTHON) -m src.utils.plotting --metrics runs/gru_base/metrics.csv --out_dir runs/gru_base
+	$(PYTHON) -m src.utils.comparison_plot --comparison runs/duibi/biaoge/san_moxing_duibi.json --out_dir runs/duibi/tupian
+	$(PYTHON) -m src.utils.mode_model_bar_plot
+	$(PYTHON) -m src.utils.model_strategy_bar_plot
+
+web:
+	$(PYTHON) src/web/app.py
 
 test:
-	pytest -q
+	$(PYTHON) -m pytest tests/test_smoke.py -p no:cacheprovider

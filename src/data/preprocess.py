@@ -150,10 +150,6 @@ def preprocess(raw_path: str | Path, out_dir: str | Path, seed: int = 42) -> dic
     out.mkdir(parents=True, exist_ok=True)
     for name, items in splits.items():
         save_jsonl(items, out / f"{name}.jsonl")
-        (out / f"{name}.flat.txt").write_text(
-            "\n".join(item["text"] for item in items) + ("\n" if items else ""),
-            encoding="utf-8",
-        )
 
     char_counter = Counter("".join(item["text"] for item in qijue))
     stats = {
@@ -165,10 +161,6 @@ def preprocess(raw_path: str | Path, out_dir: str | Path, seed: int = 42) -> dic
         "top_50_chars": char_counter.most_common(50),
     }
     (out / "stats.json").write_text(json.dumps(stats, ensure_ascii=False, indent=2), encoding="utf-8")
-    (out / "top_chars.csv").write_text(
-        "char,freq\n" + "\n".join(f"{ch},{freq}" for ch, freq in char_counter.most_common()),
-        encoding="utf-8-sig",
-    )
     print(json.dumps(stats, ensure_ascii=False, indent=2))
     return stats
 

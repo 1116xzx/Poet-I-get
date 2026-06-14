@@ -74,7 +74,7 @@ def load_model_weights(path: Path, model: CharPoemLM, device: torch.device) -> t
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train a unified multi-task character GRU/LSTM.")
+    parser = argparse.ArgumentParser(description="Train a unified multi-task character GRU.")
     parser.add_argument("--config", default="configs/gru_base.yaml")
     args = parser.parse_args()
 

@@ -1,4 +1,4 @@
-model,strategy,label,format_rate,acrostic_rate
+﻿model,strategy,label,format_rate,acrostic_rate
 baseline,stable,"baseline
 stable",1.0,0.0
 baseline,balanced,"baseline
@@ -6,11 +6,11 @@ balanced",1.0,0.0
 baseline,creative,"baseline
 creative",1.0,0.0
 weighted,stable,"weighted
-stable",1.0,0.91
+stable",1.0,0.93
 weighted,balanced,"weighted
-balanced",1.0,0.83
+balanced",1.0,0.82
 weighted,creative,"weighted
-creative",1.0,0.71
+creative",1.0,0.72
 structured,stable,"structured
 stable",1.0,1.0
 structured,balanced,"structured
