@@ -306,15 +306,4 @@ data/          原始数据、成语库、处理后的七绝数据
 src/           数据处理、训练、生成、评测、前端代码
 runs/          最终训练曲线、评测表和对比图
 static/        前端背景图
-tests/         smoke test
 ```
-
-## 11. 最小测试
-
-项目保留了一个 smoke test，用于检查数据处理、词表、模型前向传播、续写生成和藏头生成是否能跑通：
-
-```bash
-python -m pytest tests/test_smoke.py -p no:cacheprovider
-```
-
-当前版本已通过该测试。
